@@ -1,3 +1,7 @@
+// JSON-Schema documentation generator
+// ===================================
+// The core Generator class to take a set of schemas, templates, and options
+// and build one or more HTML files.
 'use strict';
 
 var _ = require('lodash'),
@@ -6,11 +10,20 @@ var _ = require('lodash'),
 	getFiles = require('./lib/get-files'),
 	SchemaResolver = require('./lib/resolver'),
 	path = require('path'),
+	// Default endpoint options. All of these can be overridden
+	// via your own configuration
 	endpointOptionDefaults = {
+		// Attributes to include with each `link` endpoint (these will be in
+		// addition so some generated properties of this package)
 		attributes : ['title', 'description', 'method'],
+		// The attributes to build for each parameter listing of an object
+		// definition and `link` schema (e.g., required/optional inputs)
 		attribtueParameters : ['name', 'type', 'description', 'example'],
+		// What to call the `enum` "type"
 		typeEnum : 'enum',
-		curlHeaders : []
+		// Additional cURL headers to include with each example cURL request
+		// Useful for authentication, etc
+		curlHeaders : {}
 	},
 	// constructor
 	Generator = function( options ){
@@ -43,19 +56,23 @@ var _ = require('lodash'),
 		// Maps of templateFileName => contents
 		this.templateMap = {};
 	},
-	base = {};
+	proto = {};
 
 module.exports = Generator;
-Generator.prototype = base;
+Generator.prototype = proto;
 
-_.extend(base, {
+_.extend(proto, {
 
 	// Resolve schemas and template globs
+	//
+	// @return Promise
 	resolvePaths : function () {
 		return Promise.all([this.resolveSchemas(), this.resolveTemplates()]);
 	},
 
-	// Get schemas contents and resolve references
+	// Get schemas contents from the filesystem and resolve references
+	//
+	// @return Promise
 	resolveSchemas : function () {
 		return new Promise(function (resolve, reject) {
 			// Get only the files we want to parse
@@ -80,6 +97,8 @@ _.extend(base, {
 
 	// Get the contents of each template file, and key the results by file name.
 	// (useful for nesting templates / including (named) partials)
+	//
+	// @return Promise
 	resolveTemplates : function () {
 		return new Promise(function (resolve, reject) {
 			getFiles.raw(this.templates).bind(this).then(function (templates) {
@@ -95,8 +114,10 @@ _.extend(base, {
 		}.bind(this));
 	},
 
-	// Run the contents of each template through
-	// the provided compiler
+	// Run the contents of each template through the provided compiler
+	//
+	// @param Compiler function - a compiler function like Handlebars.compile
+	// @return object - template contents, keyed by file basename
 	compileTemplates : function (Compiler) {
 		_.each(this.templateMap, function (t, id) {
 			this.templateMap[id] = Compiler(t);
@@ -106,6 +127,8 @@ _.extend(base, {
 
 	// Build the objects needed for the template and
 	// create the configured HTML files
+	//
+	// @return object - HTML contents, keyed by page basename
 	makeHTML : function () {
 		var sections = this.buildSchemaDocObjects(this.resolver.resolve());
 		return _.reduce(this.pages, function(acc, includeSchemas, page){
@@ -119,7 +142,12 @@ _.extend(base, {
 	},
 
 	// Each page can have an array of schema IDs that should
-	// be included with it.
+	// be included with it. This method takes all available sections/schemas
+	// and returns only the ones that should be included
+	//
+	// @param sections array - The prepared sections of documentation. This is a one-to-one correlation with all of the schemas that will have documentation
+	// @param include array - Schema IDs whose sections should be returned
+	// @return array - array of sections
 	getSectionsForPage : function (sections, include) {
 		// Special case for all schemas on one page
 		if (include === '*') {return sections;}
@@ -130,6 +158,12 @@ _.extend(base, {
 	},
 
 	// Expects to resolve a relative URI from the given schema ID
+	// @todo Allow this to resolve any pointer reference, right now it assumes relative
+	//
+	// @param href string - `href` from a `link` object
+	// @param id string - root schema ID
+	// @param replaceWithData boolean - Replace references with example content or not
+	// @return string - resolved URI
 	resolveURI : function(href, id, replaceWithData) {
 		// This will pull out all {/schema/pointers}
 		var pat = /((?:{(?:#?(\/[\w\/]+))})+)+/g,
@@ -150,6 +184,9 @@ _.extend(base, {
 
 	// Each schema will contain itself, an HTML-ready ID, and
 	// and array of endpoints (schema.links)
+	//
+	// @param schemas array - Array of resolved schema objects
+	// @return array - sections used for documentation
 	buildSchemaDocObjects : function (schemas) {
 		return _.compact(_.map(schemas, function (schema) {
 			// Don't generate docs for these items
@@ -168,6 +205,9 @@ _.extend(base, {
 	},
 
 	// Build the endpoint for each link object of the schema
+	//
+	// @param schema object
+	// @return array - endpoint objects for the schema
 	buildEndpoints : function (schema) {
 		return _.map(schema.links, _.bind(this.buildEndpoint, this, schema));
 	},
@@ -175,6 +215,10 @@ _.extend(base, {
 	// Build the object used in the template to represent each
 	// endpoint. Provides the URI, HTML-ready ID, required/optional
 	// input parameters, example cURL, and example response object
+	//
+	// @param schema object - The schema the link is for
+	// @param link object - The link object from the schema
+	// @return object - An endpoint object
 	buildEndpoint : function (schema, link) {
 		var options = this.endpointOptions,
 			defaults = _.pick(link, options.attributes);
@@ -196,6 +240,9 @@ _.extend(base, {
 
 	// Build a map of each property in the schema that can be output
 	// in the template in a predictable manner
+	//
+	// @param link - Link object from a schema
+	// @return object - Contains arrays of `required` and `optional` parameters for the endpoint
 	buildEndpointParameterMap : function (link) {
 		var schema = link.schema || {},
 			required = link.required || [],
@@ -203,9 +250,9 @@ _.extend(base, {
 
 		// !TODO: Support allOf/oneOf/anyOf
 		if (schema.properties) {
-			_.each(schema.properties, function (config, name) {
-				var paramList = (config.required || _.contains(required, name)) ? map.required : map.optional;
-				paramList.push( this.buildParameterFields(config, name) );
+			_.each(schema.properties, function (definition, name) {
+				var paramList = (definition.required || _.contains(required, name)) ? map.required : map.optional;
+				paramList.push( this.buildParameterFields(definition, name) );
 			}, this);
 		}
 
@@ -215,7 +262,11 @@ _.extend(base, {
 	// Build the actual parameter object. There are a few core defaults,
 	// but you can override `getParameterFieldValue` to customize any
 	// additional parameters you may want to show
-	buildParameterFields : function (config, name) {
+	//
+	// @param definition object - A attribute definition
+	// @param name string - The attribute name
+	// @return object - A parameter object
+	buildParameterFields : function (definition, name) {
 		var options = this.endpointOptions,
 			parameters = options.attribtueParameters;
 
@@ -225,22 +276,22 @@ _.extend(base, {
 					item[field] = name;
 					break;
 				case 'type':
-					item[field] = config.enum ? options.typeEnum : config.type;
+					item[field] = definition.enum ? options.typeEnum : definition.type;
 					break;
 				case 'example':
-					var useItems = config.items && !config.example,
-						obj = useItems ? config.items : config,
+					var useItems = definition.items && !definition.example,
+						obj = useItems ? definition.items : definition,
 						val = obj.hasOwnProperty('example') ? obj.example : obj.default;
 
 					item[field] = JSON.stringify(useItems ? [val] : val);
 					break;
 				default:
-					item[field] = this.getParameterFieldValue(name, config, field);
+					item[field] = this.getParameterFieldValue(name, definition, field);
 					break;
 			}
 
-			if (config.properties) {
-				var map = this.buildEndpointParameterMap({schema : config});
+			if (definition.properties) {
+				var map = this.buildEndpointParameterMap({schema : definition});
 				item.fields = map.required.concat(map.optional);
 			}
 
@@ -248,12 +299,24 @@ _.extend(base, {
 		}, {}, this);
 	},
 
-	// Stub method for customizing the attribute parameter output
-	getParameterFieldValue : function (attributeName, attributeConfig, field) {
-		return attributeConfig[field];
+	// Stub method for customizing the attribute parameter output.
+	// Override this if fields you want require additional processing
+	// Typically this will return a string, but you may return anything you want
+	// if your template is ready for it.
+	//
+	// @param name string - attribute name
+	// @param definition object - attribute definition
+	// @param field string - key within the defintion to add to the parameter object
+	// @return string|mixed
+	getParameterFieldValue : function (name, definition, field) {
+		return definition[field];
 	},
 
 	// Builds a parameter map for a given schema
+	// @todo better method name
+	//
+	// @param object object - schema definition with `properties` and possibly `additionalProperties`
+	// @return object - definition object
 	buildObjectParameterMap : function (object) {
 		var props = this.buildPropsDefinitions(object.properties),
 			addtl = this.buildPropsDefinitions(object.additionalProperties);
@@ -262,6 +325,9 @@ _.extend(base, {
 
 	// Takes an object and build parameter fields for each, returning the
 	// configuration keyed by property name
+	//
+	// @param props object - properties object to build definitions for
+	// @return object - definition object
 	buildPropsDefinitions : function (props) {
 		return _.reduce(props, function (acc, config, name){
 			acc[name] = this.buildParameterFields(config, name);
@@ -269,10 +335,15 @@ _.extend(base, {
 		}, {}, this);
 	},
 
-	// Builds an object defintion. Similar to the endpoint parameters,
-	// build will detect anyOf/oneOf and return multiple resolved object
-	// maps
-	buildDefinition : function (schema, required) {
+	// Builds an object defintion. Similar to the endpoint parameters, build
+	// will detect anyOf/oneOf and return multiple resolved object maps.
+	// The definition object will contain `properties` and possibly `objects`
+	// if encountering an allOf/anyOf/oneOf case. Each object will
+	// be a definition object.
+	//
+	// @param schema object - a valid schema object
+	// @return object - definition object
+	buildDefinition : function (schema) {
 		var def = {properties : {}};
 
 		if (schema.title) {
@@ -283,24 +354,24 @@ _.extend(base, {
 			_.each(schema, function (_schema) {
 				def.properties = _.extend(
 					def.properties,
-					this.buildDefinition(_schema, _schema.required).properties
+					this.buildDefinition(_schema).properties
 				);
 			}, this);
 		} else if (schema.allOf) {
 			_.each(schema.allOf, function (_schema) {
-				var consumable = this.buildDefinition(_schema, _schema.required);
+				var _def = this.buildDefinition(_schema);
 
-				if (consumable.objects) {
-					consumable = this.buildDefinition(consumable.objects, schema.required);
+				if (_def.objects) {
+					_def = this.buildDefinition(_def.objects);
 				}
 
-				def.properties = _.extend(def.properties, consumable.properties);
+				def.properties = _.extend(def.properties, _def.properties);
 			}, this);
 		} else if (schema.oneOf || schema.anyOf) {
 			var items = schema.oneOf || schema.anyOf;
 			def.objects = [];
 			_.each(items, function (_schema) {
-				def.objects.push(this.buildDefinition(_schema, _schema.required));
+				def.objects.push(this.buildDefinition(_schema));
 			}, this);
 		} else {
 			_.extend(def.properties, this.buildObjectParameterMap(schema));
@@ -309,21 +380,27 @@ _.extend(base, {
 		return def;
 	},
 
-	// Returns a curl formatted string
+	// Returns a curl formatted string. Data provided will be json encoded for now.
+	// @todo allow custom/additional flags
+	//
+	// @param href string - a formatted `href`
+	// @param method string - HTTP method
+	// @param headers object - Headers to be built with the request
+	// @param data object [optional] - Data for the request
 	buildCurl : function (href, method, headers, data) {
 		var url = this.apiURL + href,
 			flags = [],
 			curl = '';
 
 		_.each(headers, function (v, k) {
-			flags.push(this._buildCurlHeader('H', k+': '+v));
+			flags.push(this._buildCurlFlag('H', k+': '+v));
 		}, this);
 
 		if (data) {
 			if ('GET' === method) {
 				url += this._buildQueryString(data);
 			} else {
-				flags.push(this._buildCurlHeader('-data', JSON.stringify(data), '\''));
+				flags.push(this._buildCurlFlag('-data', JSON.stringify(data), '\''));
 			}
 		}
 
@@ -341,6 +418,11 @@ _.extend(base, {
 	// These are typically nested API response objects where we
 	// need to build the response object and splice in example data for the
 	// root-level schema (i.e., domain object)
+	//
+	// @param root object - A valid schema
+	// @param schem object - A valid schema
+	// @param options object [optional] - Configuration for resolving example data
+	// @return object - attribute/example data object
 	buildExampleData : function (root, schema, options) {
 		options = options || {};
 		var reduced = {};
@@ -378,6 +460,10 @@ _.extend(base, {
 	// Pull example data from an attribute configuration object of a schema.
 	// Delegates back to #buildExampleData if it encounters a full schema for
 	// a property definition
+	//
+	// @param root object - A valid schema
+	// @param properties object - Object properties to find example data from
+	// @return object - Resolved attributes with example data as values
 	buildExampleProperties : function (root, properties) {
 		return _.reduce(properties, function (props, config, name) {
 			// Ignore any note properties (__notes)
@@ -416,15 +502,30 @@ _.extend(base, {
 	// Helpers
 	// -------
 
-	_buildCurlHeader : function (flag, val, quoteType) {
+	// Builds a cURL flag
+	//
+	// @param flag string
+	// @param val string
+	// @param quoteType [optional] - typically a single or double quote
+	// @return string
+	_buildCurlFlag : function (flag, val, quoteType) {
 		quoteType = quoteType || '"';
 		return ['-', flag, ' ', quoteType, val, quoteType].join('');
 	},
 
+	// Scrub a string and remove invalid characters for HTML attribute values
+	//
+	// @param val string
+	// @param string - santized string
 	_sanitizeHTMLAttributeValue : function (val) {
 		return val.toString().toLowerCase().replace(/[\s.,;'=<>\/]+/gi, '-');
 	},
 
+	// Build a URL query string from an object. Expects strings for all values
+	//
+	// @param obj object
+	// @param noQ boolean - Add initial question mark for query
+	// @return string
 	_buildQueryString : function (obj, noQ) {
 		var firstJoin = noQ ? '&' : '?';
 		return _.reduce(obj, function (str, val, key) {

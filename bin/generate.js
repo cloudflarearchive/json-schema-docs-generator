@@ -55,6 +55,7 @@ domain.run(function(){
 			});
 		};
 
+		// Resolve globs
 		get(schemaConfig);
 		get(templateConfig);
 	});
@@ -76,7 +77,7 @@ domain.run(function(){
 
 		generator
 			.resolvePaths()
-			.then(function (schemasByID, templatesByPath) {
+			.then(function (/*schemasByID, templatesByPath*/) {
 				// Compiled the templates
 				generator.compileTemplates(generator.compiler);
 				// Register each template as a partial for Handlebars
