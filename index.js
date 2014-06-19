@@ -389,6 +389,9 @@ _.extend(base, {
 			// have to dig a level deeper for the example data
 			if (_.isPlainObject(example) && (example.example || example.default)) {
 				example = example.example || example.default;
+			// Resolve the root schema
+			} else if (config.rel === 'self') {
+				example = this.buildExampleData(root, root);
 			// Resolve `items` from an array definition
 			} else if (config.type === 'array' && config.items && !example) {
 				example = [config.items.example || this.buildExampleData(root, config.items)];
