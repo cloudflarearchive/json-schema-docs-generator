@@ -41,20 +41,11 @@ var _ = require('lodash'),
 		this.templates = options.templates || [];
 		// Pages to build, referenced by template name
 		this.pages = options.pages;
-		// The compiler to use (e.g., Handlebars.compile)
-		this.compiler = options.compiler;
 		// Each endpoint section will get these parameters
 		// for the template
 		this.endpointOptions = _.defaults({}, options.endpointOptions, endpointOptionDefaults);
 		// Default curl command format.
 		this.curl = options.curl || '$ curl -X';
-
-		// Internal items
-		// --------------
-		// Maps of schemaID => schema
-		this.schemasByID = {};
-		// Maps of templateFileName => contents
-		this.templateMap = {};
 	},
 	proto = {};
 
@@ -67,73 +58,79 @@ _.extend(proto, {
 	//
 	// @return Promise
 	resolvePaths : function () {
-		return Promise.all([this.resolveSchemas(), this.resolveTemplates()]);
+		return Promise.props({
+			schemas: this.parseSchemas(),
+			templates: this.parseTemplates()
+		});
 	},
 
 	// Get schemas contents from the filesystem and resolve references
 	//
 	// @return Promise
-	resolveSchemas : function () {
+	parseSchemas : function () {
 		return new Promise(function (resolve, reject) {
 			// Get only the files we want to parse
 			var files = this.schemas.filter(function(path){
-				return !_.include(this.dontParse, path);
-			}.bind(this));
+					return !_.include(this.dontParse, path);
+				}.bind(this));
 
 			getFiles.asJSON(files).bind(this).then(function(files){
-				// Only store schemas that should have docs
-				_.each(files, function(schema){
-					this.schemasByID[schema.id] = schema;
-				}, this);
-
 				// Pass back schema map..
-				this.resolver = new SchemaResolver({schemas: this.schemasByID});
-				resolve(this.schemasByID, this.resolver);
-				return this.schemasByID;
-
-			});
+				resolve(_.reduce(files, function(acc, schema){
+					acc[schema.id] = schema;
+					return acc;
+				}, {}, this));
+			}, reject);
 		}.bind(this));
+	},
+
+	// Recursively resolve all references schemas for an array of schemas
+	//
+	// @param schemas object - Valid schema objects, keyed by schema ID
+	// @return array - resolve schema objects
+	resolveSchemas : function (schemas) {
+		var resolver = this.resolver = new SchemaResolver({schemas: schemas});
+		return resolver.resolve();
 	},
 
 	// Get the contents of each template file, and key the results by file name.
 	// (useful for nesting templates / including (named) partials)
 	//
 	// @return Promise
-	resolveTemplates : function () {
+	parseTemplates : function () {
 		return new Promise(function (resolve, reject) {
 			getFiles.raw(this.templates).bind(this).then(function (templates) {
 				// Map file name to contents
-				_.reduce(templates, function (acc, contents, p) {
+				resolve(_.reduce(templates, function (acc, contents, p) {
 					acc[path.basename(p, path.extname(p))] = contents;
 					return acc;
-				}, this.templateMap, this);
-
-				resolve(this.templateMap);
-				return this.templateMap;
-			});
+				}, {}, this));
+			}, reject);
 		}.bind(this));
 	},
 
 	// Run the contents of each template through the provided compiler
 	//
 	// @param Compiler function - a compiler function like Handlebars.compile
+	// @param templates object - object of templates keyed by template ID (file basename)
 	// @return object - template contents, keyed by file basename
-	compileTemplates : function (Compiler) {
-		_.each(this.templateMap, function (t, id) {
-			this.templateMap[id] = Compiler(t);
-		}.bind(this));
-		return this.templateMap;
+	compileTemplates : function (Compiler, templates) {
+		return _.reduce(templates, function (acc, t, id) {
+			acc[id] = Compiler(t);
+			return acc;
+		}, {}, this);
 	},
 
 	// Build the objects needed for the template and
 	// create the configured HTML files
 	//
+	// @param templates object - Map of templates, keyed by file name
 	// @return object - HTML contents, keyed by page basename
-	makeHTML : function () {
-		var sections = this.buildSchemaDocObjects(this.resolver.resolve());
+	makeHTML : function (templates, schemas) {
+		var sections = this.buildSchemaDocObjects(schemas);
+
 		return _.reduce(this.pages, function(acc, includeSchemas, page){
-			// Temporary
-			var template = this.templateMap[page] || this.templateMap.index;
+			var template = templates[page] || templates.index; // Temporary?
 			acc[page] = template({
 				sections: this.getSectionsForPage(sections, includeSchemas)
 			});
@@ -172,8 +169,8 @@ _.extend(proto, {
 		_.each(matches, function (match) {
 			var stripped, definition, replacement;
 				// Remove the brackets so we can find the definition
-			stripped = match.replace(/[{}]/g, ''),
-			definition = this.resolver.get(id+stripped),
+			stripped = match.replace(/[{}]/g, '');
+			definition = this.resolver.get(id+stripped);
 			// Replace the match with either example data or the last component of the pointer
 			replacement = replaceWithData ? (definition.example || definition.default) : ':'+path.basename(stripped);
 			href = href.replace(match, replacement);
@@ -226,7 +223,6 @@ _.extend(proto, {
 		return _.extend(defaults, {
 			id : this._sanitizeHTMLAttributeValue(schema.title+'-'+defaults.title),
 			uri : this.resolveURI(link.href, schema.id),
-			permissions : link.permissions_required && link.permissions_required.enum ? link.permissions_required.enum.join(', ') : false,
 			parameters : this.buildEndpointParameterMap(link),
 			curl : this.buildCurl(
 				this.resolveURI(link.href, schema.id, true),

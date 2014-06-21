@@ -13,8 +13,7 @@ var Handlebars = require('handlebars');
 var fs = require('fs');
 // !Better way to get this?
 var config = require('../../../package')['json-schema-docs'];
-var dontParse = config.dontParse || [];
-var handleErr = function (err) { console.error(GEN_PREX+err); };
+var handleErr = function (err) { console.error(GEN_PREX+'Error: '+err); };
 
 domain.on('error', function (err) {
 	console.error(GEN_PREX+err);
@@ -46,8 +45,8 @@ domain.run(function(){
 						// When we've reached the last, move on
 						if (schemaConfig.done && templateConfig.done) {
 							resolve({
-								schemaPaths: schemaConfig.paths,
-								templatePaths: templateConfig.paths
+								schemas: schemaConfig.paths,
+								templates: templateConfig.paths
 							});
 						}
 					}
@@ -62,41 +61,44 @@ domain.run(function(){
 
 	// Build/Generate
 	resolveFiles.then(function (opts) {
-		var generator = new Generator(_.extend({}, config, {
-			compiler : Handlebars.compile,
-			schemas : opts.schemaPaths,
-			templates : opts.templatePaths,
-			dontParse: dontParse
-		}));
+		var generator = new Generator(_.extend({}, config, opts));
 
 		// Info
-		console.log(GEN_PREX+'Resolving '+opts.schemaPaths.length+' schemas');
-		console.log(GEN_PREX+'Ignoring '+dontParse.length+' files');
-		console.log(GEN_PREX+'Compiling '+opts.templatePaths.length+' templates');
-		console.log(GEN_PREX+'Skipping docs for '+ config.noDocs.length+ ' schemas');
+		console.log(GEN_PREX+'Resolving '+generator.schemas.length+' schemas');
+		console.log(GEN_PREX+'Ignoring '+generator.dontParse.length+' files');
+		console.log(GEN_PREX+'Compiling '+generator.templates.length+' templates');
+		console.log(GEN_PREX+'Skipping docs for '+ generator.noDocs.length+ ' schemas');
 
-		generator
-			.resolvePaths()
-			.then(function (/*schemasByID, templatesByPath*/) {
-				// Compiled the templates
-				generator.compileTemplates(generator.compiler);
+		// Deal with templates
+		var templates = generator
+			.parseTemplates()
+			.bind(generator)
+			.then(_.partial(generator.compileTemplates, Handlebars.compile))
+			.then(function (templates) {
 				// Register each template as a partial for Handlebars
-				_.each(generator.templateMap, function (compiledSource, name) {
+				return _.each(templates, function (acc, compiledSource, name) {
 					Handlebars.registerPartial(name, compiledSource);
 				});
-			}, handleErr)
-			.then(function () {
-				// Make the page(s)!
-				var pages = generator.makeHTML();
+			}, handleErr);
 
-				_.each(pages, function(contents, fileName){
-					var path = [(config.dist || 'dist'), '/', fileName, '.html'].join('');
+		// Deal with schemas
+		var schemas = generator
+			.parseSchemas()
+			.bind(generator)
+			.then(generator.resolveSchemas);
+
+		// Once both templates and schemas are ready, build the page(s)
+		Promise.props({templates : templates, schemas : schemas})
+			.bind(generator)
+			.then(function (result) {
+				// Make the page(s) and write pages to disk
+				_.each(generator.makeHTML(result.templates, result.schemas), function (contents, fileName){
+					var path = [(config.destination || 'dist'), '/', fileName, '.html'].join('');
 					console.log(GEN_PREX+'Writing file: '+path);
 					fs.writeFile(path, contents);
 				});
 
 				console.log(GEN_PREX+'Build took '+ process.uptime() + ' seconds');
 			}, handleErr);
-
 	}, handleErr);
 });
