@@ -19,8 +19,6 @@ var _ = require('lodash'),
 		// The attributes to build for each parameter listing of an object
 		// definition and `link` schema (e.g., required/optional inputs)
 		attribtueParameters : ['name', 'type', 'description', 'example'],
-		// What to call the `enum` "type"
-		typeEnum : 'enum',
 		// Additional cURL headers to include with each example cURL request
 		// Useful for authentication, etc
 		curlHeaders : {}
@@ -44,6 +42,10 @@ var _ = require('lodash'),
 		// Each endpoint section will get these parameters
 		// for the template
 		this.endpointOptions = _.defaults({}, options.endpointOptions, endpointOptionDefaults);
+		// Additional template parameters for each page.
+		// Here might be a good place to configure things like an API version, or any global
+		// variables you want accessible inside of your templates
+		this.templateOptions = options.templateOptions;
 		// Default curl command format.
 		this.curl = options.curl || '$ curl -X';
 	},
@@ -131,9 +133,9 @@ _.extend(proto, {
 
 		return _.reduce(this.pages, function(acc, includeSchemas, page){
 			var template = templates[page] || templates.index; // Temporary?
-			acc[page] = template({
+			acc[page] = template(_.extend({}, this.templateOptions, {
 				sections: this.getSectionsForPage(sections, includeSchemas)
-			});
+			}));
 			return acc;
 		}, {}, this);
 	},
@@ -196,14 +198,18 @@ _.extend(proto, {
 				id : this._sanitizeHTMLAttributeValue(schema.title || ''),
 				// An array of endpoints available to the schema
 				endpoints : this.buildEndpoints(schema),
-				definition : this.buildDefinition(schema, schema.required)
+				// Object definition map. Provides name, type, description, example,
+				// etc. for the schema. The definition object has a `title` and `properties` attribute,
+				// but may also have an `objects` attribute, which contains an array of
+				// definition objects.
+				definition : this.buildDefinition(schema)
 			});
 		}, this));
 	},
 
 	// Build the endpoint for each link object of the schema
 	//
-	// @param schema object
+	// @param schema object - valid schema
 	// @return array - endpoint objects for the schema
 	buildEndpoints : function (schema) {
 		return _.map(schema.links, _.bind(this.buildEndpoint, this, schema));
@@ -230,7 +236,7 @@ _.extend(proto, {
 				options.curlHeaders,
 				this.buildExampleData(schema, link.schema)
 			),
-			response : JSON.stringify(this.buildExampleData(schema, link.targetSchema), null, 2)
+			response : this._stringifyData(this.buildExampleData(schema, link.targetSchema), true)
 		});
 	},
 
@@ -247,7 +253,7 @@ _.extend(proto, {
 		// !TODO: Support allOf/oneOf/anyOf
 		if (schema.properties) {
 			_.each(schema.properties, function (definition, name) {
-				var paramList = (definition.required || _.contains(required, name)) ? map.required : map.optional;
+				var paramList = (definition.required === true || _.contains(required, name)) ? map.required : map.optional;
 				paramList.push( this.buildParameterFields(definition, name) );
 			}, this);
 		}
@@ -272,20 +278,29 @@ _.extend(proto, {
 					item[field] = name;
 					break;
 				case 'type':
-					item[field] = definition.enum ? options.typeEnum : definition.type;
+					item[field] = definition.enum ? (options.typeEnum || typeof definition.enum[0]) : definition.type;
 					break;
 				case 'example':
 					var useItems = definition.items && !definition.example,
 						obj = useItems ? definition.items : definition,
 						val = obj.hasOwnProperty('example') ? obj.example : obj.default;
 
-					item[field] = JSON.stringify(useItems ? [val] : val);
+					item[field] = this._stringifyData(useItems ? [val] : val);
+					break;
+				case 'description':
+					item[field] = definition.description;
+
+					if (definition.enum) {
+						item[field] += '\n ('+definition.enum.join(', ')+')';
+					}
 					break;
 				default:
 					item[field] = this.getParameterFieldValue(name, definition, field);
 					break;
 			}
 
+			// If the attribute definition has its own sub-properties,
+			// build them up as `fields` of the attribute
 			if (definition.properties) {
 				var map = this.buildEndpointParameterMap({schema : definition});
 				item.fields = map.required.concat(map.optional);
@@ -317,6 +332,19 @@ _.extend(proto, {
 		var props = this.buildPropsDefinitions(object.properties),
 			addtl = this.buildPropsDefinitions(object.additionalProperties);
 		return _.extend(props, addtl);
+	},
+
+	// Builds an object parameter map containing only required fields for the given object
+	//
+	// @param object object - An object with `properties`
+	// @param required array - Array of required property names
+	// @return object - definition object
+	buildRequiredObjectParameterMap : function (object, required) {
+		var requiredProps = _.filter(object.properties, function(definition, name){
+			return _.contains(required, name);
+		}, this);
+
+		return this.buildObjectParameterMap(requiredProps);
 	},
 
 	// Takes an object and build parameter fields for each, returning the
@@ -357,20 +385,26 @@ _.extend(proto, {
 			_.each(schema.allOf, function (_schema) {
 				var _def = this.buildDefinition(_schema);
 
+				// Could this be abstracted in this method?
 				if (_def.objects) {
 					_def = this.buildDefinition(_def.objects);
 				}
 
 				def.properties = _.extend(def.properties, _def.properties);
 			}, this);
+
+			// Build the required attributes and merged example data object for the `allOf` case
+			def.required = this.buildRequiredObjectParameterMap(schema, schema.required);
+			def.example = this._stringifyData(this.buildExampleData(schema, schema), true);
+
 		} else if (schema.oneOf || schema.anyOf) {
 			var items = schema.oneOf || schema.anyOf;
-			def.objects = [];
-			_.each(items, function (_schema) {
-				def.objects.push(this.buildDefinition(_schema));
-			}, this);
+			def.objects = _.map(items, this.buildDefinition, this);
 		} else {
 			_.extend(def.properties, this.buildObjectParameterMap(schema));
+			// Provide required attributes and an example data object for the schema
+			def.required = this.buildRequiredObjectParameterMap(schema, schema.required);
+			def.example = this._stringifyData(this.buildExampleData(schema, schema), true);
 		}
 
 		return def;
@@ -396,7 +430,7 @@ _.extend(proto, {
 			if ('GET' === method) {
 				url += this._buildQueryString(data);
 			} else {
-				flags.push(this._buildCurlFlag('-data', JSON.stringify(data), '\''));
+				flags.push(this._buildCurlFlag('-data', this._stringifyData(data), '\''));
 			}
 		}
 
@@ -416,7 +450,7 @@ _.extend(proto, {
 	// root-level schema (i.e., domain object)
 	//
 	// @param root object - A valid schema
-	// @param schem object - A valid schema
+	// @param schema object - A valid schema
 	// @param options object [optional] - Configuration for resolving example data
 	// @return object - attribute/example data object
 	buildExampleData : function (root, schema, options) {
@@ -469,8 +503,8 @@ _.extend(proto, {
 
 			// If the property is referencing a defintion, we
 			// have to dig a level deeper for the example data
-			if (_.isPlainObject(example) && (example.example || example.default)) {
-				example = example.example || example.default;
+			if (_.isPlainObject(example) && (_.has(example, 'example') || _.has(example, 'default'))) {
+				example = _.has(example, 'example') ? example.example : example.default;
 			// Resolve the root schema
 			} else if (config.rel === 'self') {
 				example = this.buildExampleData(root, root);
@@ -497,6 +531,16 @@ _.extend(proto, {
 
 	// Helpers
 	// -------
+
+	// Stringify a given object. Defaults to JSON encoding,
+	// but you can override this to encode your data in a different way.
+	//
+	// @param data object - Object to be stringified
+	// @param prettyPrint boolean - Whether to "pretty print" the string
+	// @return string
+	_stringifyData : function (data, prettyPrint) {
+		return JSON.stringify(data, null, prettyPrint ? 2 : void 0);
+	}
 
 	// Builds a cURL flag
 	//
@@ -530,4 +574,3 @@ _.extend(proto, {
 		}, firstJoin);
 	}
 });
-
