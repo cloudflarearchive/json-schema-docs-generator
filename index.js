@@ -540,7 +540,7 @@ _.extend(proto, {
 	// @return string
 	_stringifyData : function (data, prettyPrint) {
 		return JSON.stringify(data, null, prettyPrint ? 2 : void 0);
-	}
+	},
 
 	// Builds a cURL flag
 	//
