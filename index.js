@@ -143,17 +143,27 @@ _.extend(proto, {
 	// Each page can have an array of schema IDs that should
 	// be included with it. This method takes all available sections/schemas
 	// and returns only the ones that should be included
+	// This will return the `sections` in the order defined by `include`
 	//
 	// @param sections array - The prepared sections of documentation. This is a one-to-one correlation with all of the schemas that will have documentation
 	// @param include array - Schema IDs whose sections should be returned
 	// @return array - array of sections
 	getSectionsForPage : function (sections, include) {
-		// Special case for all schemas on one page
+		var includeSections = [];
+		// Special case for all schemas on one page.
+		// NOTE: No guarantee of order here.
 		if (include === '*') {return sections;}
 
-		return _.filter(sections, function (section) {
+		// Specifically doing this in order so the schemas that should be included
+		// are return in their configured order.
+		includeSections = _.filter(sections, function (section) {
 			return _.contains(include, section._id);
 		});
+
+		return _.reduce(include, function (acc, schemaID) {
+			acc.push(_.detect(includeSections, function (section) { return section._id === schemaID; }));
+			return acc;
+		}, []);
 	},
 
 	// Expects to resolve a relative URI from the given schema ID
