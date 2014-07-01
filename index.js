@@ -530,7 +530,7 @@ _.extend(proto, {
 			// Ignore any note properties (__notes)
 			if (name.indexOf('__') === 0) {return props;}
 
-			var example = config.example || config.default;
+			var example = _.has(config, 'example') ? config.example : config.default;
 
 			// If the property is referencing a defintion, we
 			// have to dig a level deeper for the example data
@@ -554,6 +554,7 @@ _.extend(proto, {
 				var item = (config.oneOf || config.anyOf)[0];
 				example = this.buildExampleProperties(item, item.properties);
 			}
+
 			// Forcing all keys to lowercase. This is done partially because
 			// the parser gets confused when declaring "id" as a property of an object,
 			// because it wants to resolve it as reference to another schema.
