@@ -280,12 +280,13 @@ _.extend(proto, {
 	// @return object - A parameter object
 	buildParameterFields : function (definition, name) {
 		var options = this.endpointOptions,
-			parameters = options.attribtueParameters;
+			parameters = options.attribtueParameters,
+			reduced = {};
 
-		return _.reduce(parameters, function (item, field) {
+		reduced = _.reduce(parameters, function (item, field) {
 			switch (field) {
 				case 'name':
-					item[field] = name;
+					item[field] = name.toLowerCase();
 					break;
 				case 'type':
 					item[field] = definition.enum ? (options.typeEnum || typeof definition.enum[0]) : definition.type;
@@ -309,15 +310,35 @@ _.extend(proto, {
 					break;
 			}
 
-			// If the attribute definition has its own sub-properties,
-			// build them up as `fields` of the attribute
-			if (definition.properties) {
-				var map = this.buildEndpointParameterMap({schema : definition});
-				item.fields = map.required.concat(map.optional);
-			}
-
 			return item;
 		}, {}, this);
+
+		// If a definition is pointed to another schema that is an `allOf` reference,
+		// resolve it so the statements below will catch `definition.properties`
+		if (definition.allOf) {
+			definition = this.buildDefinition(definition);
+		}
+
+		// If the attribute definition has its own sub-properties,
+		// build them up as `_fields` of the attribute
+		if (definition.properties) {
+			reduced._fields = _.reduce(definition.properties, function(acc, def, n){
+				acc[n] = this.buildParameterFields(def, n);
+				return acc;
+			}.bind(this), {});
+		}
+
+		// If an attribute can be multiple types, store each parameter object
+		// under its appropriate type
+		if (definition.oneOf || definition.anyOf) {
+			var key = definition.oneOf ? 'oneOf' : 'anyOf';
+			reduced[key] = [];
+			_.each(definition.oneOf || definition.anyOf, function (schema) {
+				reduced[key].push( this.buildParameterFields(schema, name) );
+			}.bind(this));
+		}
+
+		return reduced;
 	},
 
 	// Stub method for customizing the attribute parameter output.
@@ -525,9 +546,13 @@ _.extend(proto, {
 			// and we don't already have an example
 			} else if (config.id && !example) {
 				example = this.buildExampleData(root, config);
-			// Nest objects
+			// Nested objects
 			} else if (config.properties) {
 				example = this.buildExampleProperties(root, config.properties);
+			// Support oneOf/anyOf references. Default to the first item
+			} else if (config.oneOf || config.anyOf) {
+				var item = (config.oneOf || config.anyOf)[0];
+				example = this.buildExampleProperties(item, item.properties);
 			}
 			// Forcing all keys to lowercase. This is done partially because
 			// the parser gets confused when declaring "id" as a property of an object,
