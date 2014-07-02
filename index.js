@@ -280,7 +280,7 @@ _.extend(proto, {
 	// @return object - A parameter object
 	buildParameterFields : function (definition, name) {
 		var options = this.endpointOptions,
-			parameters = options.attribtueParameters,
+			parameters = options.attributeParameters,
 			reduced = {};
 
 		reduced = _.reduce(parameters, function (item, field) {
