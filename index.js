@@ -399,7 +399,7 @@ _.extend(proto, {
 	// @param schema object - a valid schema object
 	// @return object - definition object
 	buildDefinition : function (schema) {
-		var def = {properties : {}};
+		var def = {properties : {}, _schema: schema};
 
 		if (schema.title) {
 			def.title = schema.title;
@@ -431,11 +431,26 @@ _.extend(proto, {
 		} else if (schema.oneOf || schema.anyOf) {
 			var items = schema.oneOf || schema.anyOf;
 			def.objects = _.map(items, this.buildDefinition, this);
+
+			_.each(def.objects, function(_def){
+				_def.example = this._stringifyData(this.buildExampleData(schema, _def._schema, {includeAdditionalRootProps: true}), true);
+			}, this);
 		} else {
 			_.extend(def.properties, this.buildObjectParameterMap(schema));
 			// Provide required attributes and an example data object for the schema
 			def.required = this.buildRequiredObjectParameterMap(schema, schema.required);
 			def.example = this._stringifyData(this.buildExampleData(schema, schema), true);
+		}
+
+		// Support additional properties on all definition types
+		if (schema.additionalProperties) {
+			var addtl = this.buildPropsDefinitions(schema.additionalProperties);
+			// anyOf/oneOf scenario
+			if (def.objects) {
+				_.each(def.objects, function(obj){ _.extend(obj.properties, addtl); });
+			} else {
+				_.extend(def.properties, addtl);
+			}
 		}
 
 		return def;
@@ -491,6 +506,12 @@ _.extend(proto, {
 		// Just bail out if we haven't received a schema
 		if (!schema) {return null;}
 
+		// In the event that we pass a full schema object,
+		// replace whatever the root is, because we are now changing context
+		if (schema.id) {
+			root = schema;
+		}
+
 		// Array of schemas might be from an allOf directive
 		// so we merge them together, with the latter overwriting
 		// the former.
@@ -515,6 +536,18 @@ _.extend(proto, {
 			reduced = this.buildExampleProperties(root, schema.properties);
 		}
 
+		// Merge in additional properties that may be set on the schema
+		if (schema.additionalProperties) {
+			_.extend(reduced, this.buildExampleProperties(root, schema.additionalProperties));
+		}
+
+		// Additionally, merge in additional properties that might be set on the root schema
+		// This is used specifically when building example data objects for oneOf/anyOf cases
+		// and the root schema may have additionalProperties to include with each individual schema
+		if (options.includeAdditionalRootProps & schema !== root && root.additionalProperties) {
+			_.extend(reduced, this.buildExampleProperties(root, root.additionalProperties));
+		}
+
 		return reduced;
 	},
 
@@ -528,7 +561,7 @@ _.extend(proto, {
 	buildExampleProperties : function (root, properties) {
 		return _.reduce(properties, function (props, config, name) {
 			// Ignore any note properties (__notes)
-			if (name.indexOf('__') === 0) {return props;}
+			if (name.indexOf('__') === 0 || config.private) {return props;}
 
 			var example = _.has(config, 'example') ? config.example : config.default;
 
@@ -545,7 +578,7 @@ _.extend(proto, {
 			// The property definition is referencing a schema
 			// and we don't already have an example
 			} else if (config.id && !example) {
-				example = this.buildExampleData(root, config);
+				example = this.buildExampleData(config, config);
 			// Nested objects
 			} else if (config.properties) {
 				example = this.buildExampleProperties(root, config.properties);
@@ -553,6 +586,9 @@ _.extend(proto, {
 			} else if (config.oneOf || config.anyOf) {
 				var item = (config.oneOf || config.anyOf)[0];
 				example = this.buildExampleProperties(item, item.properties);
+			// Support allOf references for properties
+			} else if (config.allOf) {
+				example = this.buildExampleData(root, config);
 			}
 
 			// Forcing all keys to lowercase. This is done partially because
