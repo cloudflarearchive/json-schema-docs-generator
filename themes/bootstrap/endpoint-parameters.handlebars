@@ -1,0 +1,18 @@
+<table class="table table-striped">
+	<thead>
+		<tr>
+			<th>Name <small>/type</small></th>
+			<th>Description</th>
+			<th>Example</th>
+		</tr>
+	</thead>
+	<tbody>
+	{{#each this}}
+		<tr>
+			<td><strong>{{name}}</strong><br /><small><em>{{type}}</em></small></td>
+			<td>{{description}}</td>
+			<td class="example-code"><small><code>{{example}}</code></small></td>
+		</tr>
+	{{/each}}
+	</tbody>
+</table>

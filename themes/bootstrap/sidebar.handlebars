@@ -1,0 +1,17 @@
+<h3>Sections</h3>
+<nav>
+	{{#each sections}}
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="panel-title"><a href="#{{id}}">{{title}}</a></h4>
+		</div>
+		<div class="panel-body api-nav">
+			<ul class="nav nav-pills nav-stacked">
+				{{#each endpoints}}
+				<li><a href="#{{id}}">{{title}}</a></li>
+				{{/each}}
+			</ul>
+		</div>
+	</div>
+	{{/each}}
+</nav>

@@ -1,0 +1,40 @@
+<table class="table table-striped">
+	<thead>
+		<th>Name</th>
+		<th>Type</th>
+		<th>Description</th>
+	</thead>
+	<tbody>
+	{{#each this}}
+		<tr>
+			<td><strong>{{name}}</strong></td>
+			<td>{{type}}</td>
+			<td>
+				<p>
+					{{description}}
+					{{#if oneOf}}<br />One of the following:{{/if}}
+					{{#if anyOf}}<br />Any of the following:{{/if}}
+				</p>
+
+				{{#with _fields}}
+					{{> object-definition}}
+				{{/with}}
+
+				{{#each oneOf}}
+					<h6>{{description}}</h6>
+					{{#with _fields}}
+						{{> object-definition}}
+					{{/with}}
+				{{/each}}
+
+				{{#each anyOf}}
+					<h6>{{description}}</h6>
+					{{#with _fields}}
+						{{> object-definition}}
+					{{/with}}
+				{{/each}}
+			</td>
+		</tr>
+	{{/each}}
+	</tbody>
+</table>

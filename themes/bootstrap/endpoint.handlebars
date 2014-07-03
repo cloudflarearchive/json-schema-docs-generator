@@ -1,0 +1,26 @@
+<div class="panel panel-default">
+	<header class="panel-heading">
+		<h3 class="panel-title">{{title}}</h3>
+		{{#if description}}<p>{{description}}</p>{{/if}}
+	</header>
+	<div class="navbar navbar-default navbar-static-top"><span class="navbar-text">{{method}} {{uri}}</span></div>
+
+	{{#if parameters.required}}
+	<h4 class="panel-body"><em>Required</em> parameters</h4>
+	{{#with parameters.required}}
+		{{> endpoint-parameters}}
+	{{/with}}
+	{{/if}}
+	{{#if parameters.optional}}
+	<h4 class="panel-body"><em>Optional</em> parameters</h4>
+	{{#with parameters.optional}}
+		{{> endpoint-parameters}}
+	{{/with}}
+	{{/if}}
+
+	<h5 class="panel-body">cURL <sup>example</sup></h5>
+	<pre class="language-bash">{{curl}}</pre>
+
+	<h5 class="panel-body">Response <sup>example</sup></h5>
+	<pre class="language-javascript">{{{response}}}</pre>
+</div>
