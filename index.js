@@ -635,7 +635,7 @@ _.extend(proto, {
 	// @param val string
 	// @param string - santized string
 	_sanitizeHTMLAttributeValue : function (val) {
-		return val.toString().toLowerCase().replace(/[\s.,;'=<>\/]+/gi, '-');
+		return val.toString().toLowerCase().replace(/[^a-zA-Z0-9_-]+/gi, '-');
 	},
 
 	// Build a URL query string from an object. Expects strings for all values
