@@ -234,7 +234,9 @@ _.extend(proto, {
 	// @return object - An endpoint object
 	buildEndpoint : function (schema, link) {
 		var options = this.endpointOptions,
-			defaults = _.pick(link, options.attributes);
+			defaults = _.pick(link, options.attributes),
+			// Allow each link/endpoint to override headers required for the request
+			curlHeaders = this.buildExampleData(schema, link.requestHeaders || options.curlHeaders, {preserveCase: true});
 
 		return _.extend(defaults, {
 			id : this._sanitizeHTMLAttributeValue(schema.title+'-'+defaults.title),
@@ -243,7 +245,7 @@ _.extend(proto, {
 			curl : this.buildCurl(
 				this.resolveURI(link.href, schema.id, true),
 				link.method,
-				options.curlHeaders,
+				curlHeaders,
 				this.buildExampleData(schema, link.schema)
 			),
 			response : this._stringifyData(this.buildExampleData(schema, link.targetSchema), true)
@@ -533,19 +535,19 @@ _.extend(proto, {
 			reduced = this.buildExampleData(root, root, options);
 		// Finally, if we've found properties, map the example data
 		} else if (schema.properties) {
-			reduced = this.buildExampleProperties(root, schema.properties);
+			reduced = this.buildExampleProperties(root, schema.properties, options);
 		}
 
 		// Merge in additional properties that may be set on the schema
 		if (schema.additionalProperties) {
-			_.extend(reduced, this.buildExampleProperties(root, schema.additionalProperties));
+			_.extend(reduced, this.buildExampleProperties(root, schema.additionalProperties, options));
 		}
 
 		// Additionally, merge in additional properties that might be set on the root schema
 		// This is used specifically when building example data objects for oneOf/anyOf cases
 		// and the root schema may have additionalProperties to include with each individual schema
 		if (options.includeAdditionalRootProps & schema !== root && root.additionalProperties) {
-			_.extend(reduced, this.buildExampleProperties(root, root.additionalProperties));
+			_.extend(reduced, this.buildExampleProperties(root, root.additionalProperties, options));
 		}
 
 		return reduced;
@@ -557,8 +559,10 @@ _.extend(proto, {
 	//
 	// @param root object - A valid schema
 	// @param properties object - Object properties to find example data from
+	// @param options object - Options for how to build example data
 	// @return object - Resolved attributes with example data as values
-	buildExampleProperties : function (root, properties) {
+	buildExampleProperties : function (root, properties, options) {
+		options = options || {};
 		return _.reduce(properties, function (props, config, name) {
 			// Ignore any note properties (__notes)
 			if (name.indexOf('__') === 0 || config.private) {return props;}
@@ -591,12 +595,13 @@ _.extend(proto, {
 				example = this.buildExampleData(root, config);
 			}
 
-			// Forcing all keys to lowercase. This is done partially because
+			// Defaulting to forcing all keys to lowercase. This is done partially because
 			// the parser gets confused when declaring "id" as a property of an object,
 			// because it wants to resolve it as reference to another schema.
 			// The current solution is to declare ids as "ID" for the data object in the schema
 			// See: http://json-schema.org/latest/json-schema-core.html#anchor27
-			props[name.toLowerCase()] = example;
+			// Override with `preserveCase` in the options
+			props[options.preserveCase ? name : name.toLowerCase()] = example;
 			return props;
 		}, {}, this);
 	},
