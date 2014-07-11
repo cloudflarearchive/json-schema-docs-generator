@@ -1,0 +1,14 @@
+{
+    "name": "Some project",
+    "json-schema-docs": {
+        "schemas": ["schemas/*.json"],
+        "theme": "bootstrap",
+        "endpointOptions": {
+            "attributes": ["authentication_needed"],
+            "attributeParameter": ["name", "type", "example"]
+        },
+        "pages": {
+            "index": "*"
+        }
+    }
+}
