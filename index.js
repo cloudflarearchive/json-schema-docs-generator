@@ -24,7 +24,21 @@ var _ = require('lodash'),
 		curlHeaders : {}
 	},
 	// constructor
-	Generator = function( options ){
+	Generator = function (options) {
+		options = options || {};
+		this.setConfig(options);
+	},
+	proto = {};
+
+module.exports = Generator;
+Generator.prototype = proto;
+
+_.extend(proto, {
+
+	// Set the configuration for the generator
+	//
+	// @returns self
+	setConfig : function (options) {
 		// Base URL used with example cURLs
 		this.apiURL = options.apiURL;
 		// Globs of file paths we should fetch
@@ -48,13 +62,9 @@ var _ = require('lodash'),
 		this.templateOptions = options.templateOptions;
 		// Default curl command format.
 		this.curl = options.curl || '$ curl -X';
+		// Ability to create multiple HTML doc packages, and override every option needed
+		this.packages = options.packages || false;
 	},
-	proto = {};
-
-module.exports = Generator;
-Generator.prototype = proto;
-
-_.extend(proto, {
 
 	// Resolve schemas and template globs
 	//
