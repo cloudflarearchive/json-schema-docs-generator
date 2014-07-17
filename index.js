@@ -142,7 +142,7 @@ _.extend(proto, {
 		var sections = this.buildSchemaDocObjects(schemas);
 
 		return _.reduce(this.pages, function(acc, includeSchemas, page){
-			var template = templates[page] || templates.index; // Temporary?
+			var template = templates[page];
 			acc[page] = template(_.extend({}, this.templateOptions, {
 				sections: this.getSectionsForPage(sections, includeSchemas)
 			}));

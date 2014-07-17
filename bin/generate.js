@@ -27,14 +27,14 @@ domain.run(function(){
 	// Allow multiple documentation packages to be defined.
 	// We'll merge in the defaults of the main config for each.
 	var packages = mainConfig.packages || {default: mainConfig},
-		promiseChain = Promise.resolve(),
-		generator = new Generator();
+		promiseChain = Promise.resolve();
 
 
 	Promise.all(_.map(packages, function (config, key) {
 		return new Promise(function (resolve, reject) {
 			// Merge the defaults from the main config, less the packages.
-			_.defaults(config, _.omit(mainConfig, ['packages']));
+			config = _.defaults(config, _.omit(mainConfig, ['packages']));
+			var generator = new Generator(config);
 
 			var resolveFiles = new Promise(function (resolve, reject) {
 				var schemaConfig = {
@@ -76,8 +76,9 @@ domain.run(function(){
 
 			// Build/generate
 			resolveFiles.then(function (opts) {
-				// update generator
-				generator.setConfig(_.extend({}, config, opts));
+				// Set the expanded schemas and templates config
+				generator.schemas = opts.schemas;
+				generator.templates = opts.templates;
 
 				// Info
 				console.log(GEN_PREX+'Resolving '+generator.schemas.length+' schemas');
