@@ -6,6 +6,7 @@
 
 var _ = require('lodash'),
 	fs = require('fs'),
+	colors = require('colors'),
 	Promise = require('bluebird'),
 	getFiles = require('./lib/get-files'),
 	SchemaResolver = require('./lib/resolver'),
@@ -24,9 +25,14 @@ var _ = require('lodash'),
 		curlHeaders : {}
 	},
 	// constructor
-	Generator = function (options) {
+	Generator = function (options, flags) {
 		options = options || {};
 		this.setConfig(options);
+		this.flags = flags || {
+			verbose : false,
+			debug : 0,
+			silent : false
+		};
 	},
 	proto = {};
 
@@ -101,7 +107,10 @@ _.extend(proto, {
 	// @param schemas object - Valid schema objects, keyed by schema ID
 	// @return array - resolve schema objects
 	resolveSchemas : function (schemas) {
-		var resolver = this.resolver = new SchemaResolver({schemas: schemas});
+		var resolver = this.resolver = new SchemaResolver({
+			schemas: schemas,
+			flags : this.flags
+		});
 		return resolver.resolve();
 	},
 
@@ -114,7 +123,13 @@ _.extend(proto, {
 			getFiles.raw(this.templates).bind(this).then(function (templates) {
 				// Map file name to contents
 				resolve(_.reduce(templates, function (acc, contents, p) {
-					acc[path.basename(p, path.extname(p))] = contents;
+					var base = path.basename(p, path.extname(p));
+
+					if (acc[base] ) {
+						this._debug(1, 'Overwriting %s from %s'.yellow, base, path);
+					}
+
+					acc[base] = contents;
 					return acc;
 				}, {}, this));
 			}, reject);
@@ -190,7 +205,7 @@ _.extend(proto, {
 
 		_.each(matches, function (match) {
 			var stripped, definition, replacement;
-				// Remove the brackets so we can find the definition
+			// Remove the brackets so we can find the definition
 			stripped = match.replace(/[{}]/g, '');
 			definition = this.resolver.get(id+stripped);
 			// Replace the match with either example data or the last component of the pointer
@@ -659,5 +674,13 @@ _.extend(proto, {
 			var conn = (str === firstJoin) ? '' : '&';
 			return str + conn + key + '='+ val;
 		}, firstJoin);
+	},
+
+	_debug : function (level) {
+		var args = [].slice.call(arguments, 1);
+		if (this.flags.debug && level >= this.flags.debug ) {
+			args[0] = 'GENERATOR: '+args[0];
+			console.log.apply(console.log, args);
+		}
 	}
 });

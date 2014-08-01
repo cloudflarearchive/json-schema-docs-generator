@@ -10,7 +10,9 @@
     "deep-get-set": "^0.1.1",
     "glob": "^4.0.2",
     "handlebars": "^2.0.0-alpha.4",
-    "lodash": "^2.4.1"
+    "lodash": "^2.4.1",
+    "minimist": "~0.2.0",
+    "colors": "~0.6.2"
   },
   "bin": {
     "docs": "./bin/generate.js"

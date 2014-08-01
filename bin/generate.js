@@ -2,7 +2,8 @@
 
 var GEN_PREX = 'JSON Docs: ';
 
-var args = require('./args')(process.argv.slice(2));
+var runtimeOpts = require('./args')(process.argv.slice(2));
+var colors = require('colors');
 var domain = require('domain').create();
 var Promise = require('bluebird');
 var Generator = require('../index');
@@ -15,12 +16,12 @@ var fs = require('fs');
 var mainConfig = require('../../../package')['json-schema-docs'];
 var handleErr = function (where) {
 	return function (err) {
-		console.error(GEN_PREX+'Error '+where+': '+err);
+		console.error(GEN_PREX+'Error '.red+where+': '+err);
 	}
 };
 
 domain.on('error', function (err) {
-	console.error(GEN_PREX+err);
+	console.error(GEN_PREX.red+err);
 });
 
 domain.run(function(){
@@ -34,7 +35,7 @@ domain.run(function(){
 		return new Promise(function (resolve, reject) {
 			// Merge the defaults from the main config, less the packages.
 			config = _.defaults(config, _.omit(mainConfig, ['packages']));
-			var generator = new Generator(config);
+			var generator = new Generator(config, runtimeOpts);
 
 			var resolveFiles = new Promise(function (resolve, reject) {
 				var schemaConfig = {
@@ -81,11 +82,13 @@ domain.run(function(){
 				generator.templates = opts.templates;
 
 				// Info
-				console.log(GEN_PREX+'Resolving '+generator.schemas.length+' schemas');
-				console.log(GEN_PREX+'Ignoring '+generator.dontParse.length+' files');
-				console.log(GEN_PREX+'Compiling '+generator.templates.length+' templates');
-				console.log(GEN_PREX+'Skipping docs for '+ generator.noDocs.length+ ' schemas');
-				console.log(key+' -----^---------------------------');
+				if (runtimeOpts.verbose) {
+					console.log(GEN_PREX+'Resolving '+generator.schemas.length+' schemas');
+					console.log(GEN_PREX+'Ignoring '+generator.dontParse.length+' files');
+					console.log(GEN_PREX+'Compiling '+generator.templates.length+' templates');
+					console.log(GEN_PREX+'Skipping docs for '+ generator.noDocs.length+ ' schemas');
+					console.log(key+' ---------------------------------');
+				}
 
 				// Deal with templates
 				var templates = generator
@@ -120,7 +123,7 @@ domain.run(function(){
 								if (exists) {
 									fs.writeFile(path, contents, function (err) {
 										if (err) { throw new Error(err); }
-										console.log(GEN_PREX+'Wrote file: '+path);
+										console.log(GEN_PREX+'Wrote file: '+path.green);
 										resolve();
 									});
 								} else {
