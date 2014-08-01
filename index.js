@@ -126,7 +126,7 @@ _.extend(proto, {
 					var base = path.basename(p, path.extname(p));
 
 					if (acc[base] ) {
-						this._debug(1, 'Overwriting %s from %s'.yellow, base, path);
+						this._debug(1, 'Overwriting %s with %s', base.yellow, p.grey);
 					}
 
 					acc[base] = contents;
