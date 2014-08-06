@@ -121,15 +121,26 @@ _.extend(proto, {
 	parseTemplates : function () {
 		return new Promise(function (resolve, reject) {
 			getFiles.raw(this.templates).bind(this).then(function (templates) {
+				// Order the templates by key length. This solves an issue
+				// where you may want to include multiple template paths, and have
+				// some templates override others. The assumption here is that
+				// deeper-nested templates will prevail.
+				templates = _.map(templates, function (contents, path) {
+					return {path: path, contents: contents};
+				});
+				templates = _.sortBy(templates, function (config) {
+					return config.path.length;
+				});
+
 				// Map file name to contents
-				resolve(_.reduce(templates, function (acc, contents, p) {
-					var base = path.basename(p, path.extname(p));
+				resolve(_.reduce(templates, function (acc, config) {
+					var base = path.basename(config.path, path.extname(config.path));
 
 					if (acc[base] ) {
-						this._debug(1, 'Overwriting %s with %s', base.yellow, p.grey);
+						this._debug(1, 'Overwriting %s with %s', base.yellow, config.path.grey);
 					}
 
-					acc[base] = contents;
+					acc[base] = config.contents;
 					return acc;
 				}, {}, this));
 			}, reject);
