@@ -22,7 +22,10 @@ var _ = require('lodash'),
 		attribtueParameters : ['name', 'type', 'description', 'example'],
 		// Additional cURL headers to include with each example cURL request
 		// Useful for authentication, etc
-		curlHeaders : {}
+		curlHeaders : {},
+		// Whether or not to include `additionalProperties` when building
+		// the example objects
+		includeAdditionalProperties : true
 	},
 	// constructor
 	Generator = function (options, flags) {
@@ -272,7 +275,11 @@ _.extend(proto, {
 		var options = this.endpointOptions,
 			defaults = _.pick(link, options.attributes),
 			// Allow each link/endpoint to override headers required for the request
-			curlHeaders = this.buildExampleData(schema, link.requestHeaders || options.curlHeaders, {preserveCase: true});
+			curlHeaders = this.buildExampleData(
+				schema,
+				link.requestHeaders || options.curlHeaders,
+				_.extend({preserveCase: true}, options)
+			);
 
 		return _.extend(defaults, {
 			id : this._sanitizeHTMLAttributeValue(schema.title+'-'+defaults.title),
@@ -322,6 +329,8 @@ _.extend(proto, {
 			reduced = {};
 
 		reduced = _.reduce(parameters, function (item, field) {
+			var useItems, obj, val;
+
 			switch (field) {
 				case 'name':
 					item[field] = name.toLowerCase();
@@ -330,18 +339,19 @@ _.extend(proto, {
 					item[field] = definition.enum ? (options.typeEnum || typeof definition.enum[0]) : definition.type;
 					break;
 				case 'example':
-					var useItems = definition.items && !definition.example,
-						obj = useItems ? definition.items : definition,
-						val = obj.hasOwnProperty('example') ? obj.example : obj.default;
+					useItems = (definition.items && !definition.example),
+					obj = useItems ? definition.items : definition,
+					val = obj.hasOwnProperty('example') ? obj.example : obj.default;
+					// If the definition references a schema (or array of schemas),
+					// go fetch the example data for it.
+					if (!val && obj.id) {
+						val = this.buildExampleData(obj, obj);
+					}
 
 					item[field] = this._stringifyData(useItems ? [val] : val);
 					break;
 				case 'description':
 					item[field] = definition.description;
-
-					if (definition.enum) {
-						item[field] += '\n ('+definition.enum.join(', ')+')';
-					}
 					break;
 				default:
 					item[field] = this.getParameterFieldValue(name, definition, field);
@@ -360,10 +370,7 @@ _.extend(proto, {
 		// If the attribute definition has its own sub-properties,
 		// build them up as `_fields` of the attribute
 		if (definition.properties) {
-			reduced._fields = _.reduce(definition.properties, function(acc, def, n){
-				acc[n] = this.buildParameterFields(def, n);
-				return acc;
-			}.bind(this), {});
+			reduced._fields = definition.properties;
 		}
 
 		// If an attribute can be multiple types, store each parameter object
@@ -443,29 +450,21 @@ _.extend(proto, {
 			def.title = schema.title;
 		}
 
+		// If we've been given an array of schemas
+		// just process them and send them back immediately
 		if (_.isArray(schema)) {
 			_.each(schema, function (_schema) {
-				def.properties = _.extend(
-					def.properties,
-					this.buildDefinition(_schema).properties
-				);
-			}, this);
-		} else if (schema.allOf) {
-			_.each(schema.allOf, function (_schema) {
 				var _def = this.buildDefinition(_schema);
-
-				// Could this be abstracted in this method?
-				if (_def.objects) {
-					_def = this.buildDefinition(_def.objects);
-				}
-
-				def.properties = _.extend(def.properties, _def.properties);
+				def = this.mergeDefinitions(def, _def);
 			}, this);
 
-			// Build the required attributes and merged example data object for the `allOf` case
-			def.required = this.buildRequiredObjectParameterMap(schema, schema.required);
-			def.example = this._stringifyData(this.buildExampleData(schema, schema), true);
+			return def;
+		}
 
+		if (schema.allOf) {
+			_.each(schema.allOf, function (_schema) {
+				def = this.mergeDefinitions(def, this.buildDefinition(_schema));
+			}, this);
 		} else if (schema.oneOf || schema.anyOf) {
 			var items = schema.oneOf || schema.anyOf;
 			def.objects = _.map(items, this.buildDefinition, this);
@@ -475,10 +474,13 @@ _.extend(proto, {
 			}, this);
 		} else {
 			_.extend(def.properties, this.buildObjectParameterMap(schema));
-			// Provide required attributes and an example data object for the schema
-			def.required = this.buildRequiredObjectParameterMap(schema, schema.required);
-			def.example = this._stringifyData(this.buildExampleData(schema, schema), true);
 		}
+
+		if (schema.required) {
+			def.required = this.buildRequiredObjectParameterMap(schema, schema.required);
+		}
+
+		def.example = this._stringifyData(this.buildExampleData(schema, schema), true);
 
 		// Support additional properties on all definition types
 		if (schema.additionalProperties) {
@@ -492,6 +494,26 @@ _.extend(proto, {
 		}
 
 		return def;
+	},
+
+	// Helper method to merge multiple definition objects together,
+	// taking into account the `objects` and `properties` variations.
+	//
+	// @params 2 or more definition objects
+	// @return object - definition object
+	mergeDefinitions : function () {
+		var definitions = [].slice.call(arguments),
+			merged = definitions.shift();
+
+		_.each(definitions, function (def) {
+			if (def.objects) {
+				merged.objects = (merged.objects || []).concat(def.objects);
+			} else {
+				_.extend(merged.properties, def.properties);
+			}
+		});
+
+		return merged;
 	},
 
 	// Returns a curl formatted string. Data provided will be json encoded for now.
@@ -575,7 +597,7 @@ _.extend(proto, {
 		}
 
 		// Merge in additional properties that may be set on the schema
-		if (schema.additionalProperties) {
+		if (schema.additionalProperties && options.includeAdditionalProperties) {
 			_.extend(reduced, this.buildExampleProperties(root, schema.additionalProperties, options));
 		}
 

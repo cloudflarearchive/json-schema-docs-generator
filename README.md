@@ -22,6 +22,7 @@ To get started, you'll need to `json-schema-docs` config to your `package.json`.
 - `endpointOptions`: Options when building each endpoint
 -- `attributeParameters` : An array of attribute names to include in the parameter map for each attribute
 -- `curlHeaders`: Key/value map of flags and values to include with each example cURL request
+-- `includeAdditionalProperties`: Boolean of whether or not to include additionalProperties defined in the schema when building example objects in requests/responses (default: true)
 - `noDocs`: An array of schema IDs that should no have documentation generated for it. This is useful if you're including all docs by default, but some schemas are just a basis for others and don't need HTML documentation.
 - `templates`: An array of globs to resolve that will collect Handlebars template files
 - `templateOptions`: An object that will be passed in along with every page template that is generated. Useful for storing version numbers, or other metadata about your docs that you don't want to hard code in the template files.
@@ -80,5 +81,5 @@ A `bin` file comes packaged, but you can always write your own `bin` file to ove
 - `compiler`: Default is to use Handlebars, but you can use your own via your own implementation
 
 ## To-dos ##
-1. Add `args` for CLI
+1. TESTS!
 2. Better handling of page info for generating navigation across page templates
