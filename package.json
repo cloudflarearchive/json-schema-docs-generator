@@ -3,18 +3,27 @@
   "description": "Auto-generate HTML documentation from JSON Schemas",
   "version": "0.8.1",
   "author": "Tony Stuck <tony@cloudflare.com>",
-  "license": "MIT",
-  "main": "index.js",
+  "bin": {
+    "docs": "./bin/generate.js"
+  },
   "dependencies": {
     "bluebird": "^2.0.2",
+    "colors": "~0.6.2",
     "deep-get-set": "^0.1.1",
     "glob": "^4.0.2",
     "handlebars": "^2.0.0-alpha.4",
     "lodash": "^2.4.1",
-    "minimist": "~0.2.0",
-    "colors": "~0.6.2"
+    "minimist": "~0.2.0"
   },
-  "bin": {
-    "docs": "./bin/generate.js"
-  }
+  "homepage": "https://github.com/cloudflare/json-schema-docs-generator",
+  "keywords": [
+    "json schema",
+    "schema",
+    "documentation generator",
+    "json",
+    "schema"
+  ],
+  "license": "MIT",
+  "main": "index.js",
+  "repository": "https://github.com/cloudflare/json-schema-docs-generator"
 }
