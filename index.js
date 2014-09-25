@@ -289,7 +289,7 @@ _.extend(proto, {
 				this.resolveURI(link.href, schema.id, true),
 				link.method,
 				curlHeaders,
-				this.buildExampleData(schema, link.schema)
+				link.schema_example_data || this.buildExampleData(schema, link.schema)
 			),
 			response : this._stringifyData(this.buildExampleData(schema, link.targetSchema), true)
 		});
