@@ -541,7 +541,7 @@ _.extend(proto, {
 		}
 
 		curl = [this.curl, method, '"'+url+'"'].join(' ');
-		curl += '\\\n\t\t' + flags.join('\\\n\t\t');
+		curl += ' \\\n\t\t' + flags.join(' \\\n\t\t');
 
 		return curl;
 	},
