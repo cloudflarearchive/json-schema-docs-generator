@@ -10,10 +10,11 @@
     "bluebird": "^2.0.2",
     "colors": "~0.6.2",
     "deep-get-set": "^0.1.1",
-    "glob": "^4.0.2",
+    "glob": "^5.0.12",
     "handlebars": "^2.0.0-alpha.4",
-    "lodash": "^2.4.1",
-    "minimist": "~0.2.0"
+    "lodash": "^3.9.3",
+    "minimist": "~0.2.0",
+    "mkdir-p": "0.0.6"
   },
   "homepage": "https://github.com/cloudflare/json-schema-docs-generator",
   "keywords": [
@@ -25,5 +26,14 @@
   ],
   "license": "MIT",
   "main": "index.js",
-  "repository": "https://github.com/cloudflare/json-schema-docs-generator"
+  "repository": "https://github.com/cloudflare/json-schema-docs-generator",
+  "devDependencies": {
+    "chai": "^3.0.0",
+    "istanbul": "^0.3.15",
+    "mocha": "^2.2.5"
+  },
+  "scripts": {
+    "test": "./node_modules/mocha/bin/mocha \"test/**/*.js\"",
+    "coverage": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --ui bdd -R spec -t 5000"
+  }
 }

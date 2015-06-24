@@ -1,0 +1,62 @@
+{
+  "id": "/fixtures/foo",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "definitions": {
+    "identifier": {
+      "type": "number",
+      "description": "Foo ID",
+      "example": 123
+    },
+    "foo_prop": {
+      "type": "string",
+      "description": "Foo property",
+      "example": "bar"
+    },
+    "baz_prop": {
+      "$ref": "/fixtures/baz#/definitions/baz_prop"
+    }
+  },
+
+  "properties": {
+    "foo": {
+      "$ref": "#/definitions/foo_prop"
+    },
+    "baz": {
+      "$ref": "#/definitions/baz_prop"
+    },
+    "boo": {
+      "oneOf": [
+        {"$ref": "#/definitions/foo_prop"},
+        {"$ref": "#/definitions/baz_prop"}
+      ]
+    }
+  },
+
+  "links": [
+    {
+      "title": "Get all foos",
+      "href": "/fixtures/foos",
+      "method": "GET",
+      "schema": {
+        "type": "object",
+        "description": "Queriable properties",
+        "properties": {
+          "foo": {
+            "$ref": "#/definitions/foo_prop"
+          }
+        }
+      },
+      "targetSchema": {
+        "rel": "self"
+      }
+    },
+    {
+      "title": "Get a single foo",
+      "href": "/fixtures/foos/{#definitions/identifier}",
+      "method": "GET",
+      "targetSchema": {
+        "rel": "self"
+      }
+    }
+  ]
+}
