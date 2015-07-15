@@ -344,7 +344,7 @@ _.extend(proto, {
 					val = obj.hasOwnProperty('example') ? obj.example : obj.default;
 					// If the definition references a schema (or array of schemas),
 					// go fetch the example data for it.
-					if (!val && obj.id) {
+					if (!val && (obj.id || obj.properties)) {
 						val = this.buildExampleData(obj, obj);
 					}
 
