@@ -1,7 +1,7 @@
 {
   "name": "json-schema-docs-generator",
   "description": "Auto-generate HTML documentation from JSON Schemas",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "author": "Tony Stuck <tony@cloudflare.com>",
   "bin": {
     "docs": "./bin/generate.js"
