@@ -370,7 +370,7 @@ _.extend(proto, {
 		// If the attribute definition has its own sub-properties,
 		// build them up as `_fields` of the attribute
 		if (definition.properties) {
-			reduced._fields = definition.properties;
+			reduced._fields = _.map(definition.properties, this.buildParameterFields, this);
 		}
 
 		// If an attribute can be multiple types, store each parameter object
