@@ -9,8 +9,7 @@ var Parser = require('../lib/parser');
  */
 var SchemaDriver = function(filePaths, exclusions, options) {
   this.filePaths = filePaths;
-  this.exclusions = exclusions;
-  this.options = options || {};
+  this.parser = new Parser(filePaths, exclusions, options);
 };
 
 /**
@@ -19,8 +18,7 @@ var SchemaDriver = function(filePaths, exclusions, options) {
  * @returns {Promise}
  */
 SchemaDriver.prototype.fetch = function() {
-  var parser = new Parser(this.filePaths, this.exclusions, this.options);
-  return parser.run();
+  return this.parser.run();
 };
 
 /**

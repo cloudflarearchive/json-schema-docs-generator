@@ -14,10 +14,35 @@
     },
     "baz_prop": {
       "$ref": "/fixtures/baz#/definitions/baz_prop"
+    },
+    "object_one": {
+      "type": "object",
+      "description": "Object 1",
+      "properties": {
+        "attribute_one": {
+          "type": "string",
+          "description": "Attribute 1",
+          "example": "One"
+        }
+      }
+    },
+    "object_two": {
+      "type": "object",
+      "description": "Object 2",
+      "properties": {
+        "attribute_two": {
+          "type": "string",
+          "description": "Attribute 2",
+          "example": "Two"
+        }
+      }
     }
   },
 
   "properties": {
+    "ID": {
+      "$ref": "#/definitions/identifier"
+    },
     "foo": {
       "$ref": "#/definitions/foo_prop"
     },
@@ -25,10 +50,20 @@
       "$ref": "#/definitions/baz_prop"
     },
     "boo": {
+      "type": "object",
       "oneOf": [
-        {"$ref": "#/definitions/foo_prop"},
-        {"$ref": "#/definitions/baz_prop"}
+        {"$ref": "#/definitions/object_one"},
+        {"$ref": "#/definitions/object_two"}
       ]
+    },
+    "composite": {
+      "allOf": [
+        {"$ref": "#/definitions/object_one"},
+        {"$ref": "#/definitions/object_two"}
+      ]
+    },
+    "nested_object": {
+      "$ref": "/fixtures/baz"
     }
   },
 
@@ -52,7 +87,7 @@
     },
     {
       "title": "Get a single foo",
-      "href": "/fixtures/foos/{#definitions/identifier}",
+      "href": "/fixtures/foos/{#/definitions/identifier}",
       "method": "GET",
       "targetSchema": {
         "rel": "self"
