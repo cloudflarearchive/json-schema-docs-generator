@@ -73,7 +73,7 @@ describe('Example Data Extractor', function() {
         }
       }, this.schema1);
       expect(obj).to.be.an('object');
-      expect(obj.key).to.have.keys(this.properties);
+      expect(obj.key).to.contain.keys(this.properties);
     });
 
     it('should follow nested schema references', function() {
@@ -83,6 +83,52 @@ describe('Example Data Extractor', function() {
     it('should lowercase ID property references', function() {
       expect(this.example).to.not.contain.key('ID');
       expect(this.example).to.contain.key('id');
+    });
+
+    it('should resolve the first oneOf reference', function() {
+      expect(this.example.boo).to.have.property('attribute_one').that.equals('One');
+    });
+
+    it('should resolve the first anyOf reference', function() {
+      expect(this.example.option).to.have.property('attribute_two').that.equals('Two');
+    });
+
+    it('should resolve array references', function() {
+      expect(this.example.array_prop).to.be.an('array');
+    });
+  });
+
+  describe('#extract', function() {
+    beforeEach(function() {
+      this.example = extractor.extract(this.schema1, this.schema1);
+    });
+
+    it('should return an example that is the defined type', function() {
+      expect(this.example).to.be.an(this.schema1.type);
+    });
+
+    it('should merge allOf references together', function() {
+      expect(this.example).to.have.property('composite').that.has.keys(['attribute_one', 'attribute_two']);
+    });
+
+    it('should use the first item in oneOf references', function() {
+      expect(this.example).to.have.property('boo').that.has.key('attribute_one');
+    });
+
+    it('should use the first item in anyOf references', function() {
+      expect(this.example).to.have.property('option').that.has.key('attribute_two');
+    });
+
+    it('should resolve rel=self references', function() {
+      expect(extractor.extract({
+        key: {
+          rel: 'self'
+        }
+      }, this.schema1)).to.be.an('object');
+    });
+
+    it('should include additional properties', function() {
+      expect(this.example).to.have.property('plus_one').that.is.not.empty;
     });
   });
 });

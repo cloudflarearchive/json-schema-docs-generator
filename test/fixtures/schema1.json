@@ -1,6 +1,10 @@
 {
   "id": "/fixtures/foo",
   "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "title": "Foo Object",
+  "description": "The foo object is bar",
+
   "definitions": {
     "identifier": {
       "type": "number",
@@ -56,6 +60,13 @@
         {"$ref": "#/definitions/object_two"}
       ]
     },
+    "option": {
+      "type": "object",
+      "anyOf": [
+        {"$ref": "#/definitions/object_two"},
+        {"$ref": "#/definitions/object_one"}
+      ]
+    },
     "composite": {
       "allOf": [
         {"$ref": "#/definitions/object_one"},
@@ -64,7 +75,24 @@
     },
     "nested_object": {
       "$ref": "/fixtures/baz"
+    },
+    "array_prop": {
+      "type": "array",
+      "description": "Some array property description",
+      "items": {
+        "$ref": "#/definitions/foo_prop"
+      }
     }
+  },
+
+  "additionalProperties": {
+    "plus_one": {
+      "$ref": "#/definitions/foo_prop"
+    }
+  },
+
+  "generator": {
+    "includeAdditionalProperties": true
   },
 
   "links": [
@@ -89,6 +117,28 @@
       "title": "Get a single foo",
       "href": "/fixtures/foos/{#/definitions/identifier}",
       "method": "GET",
+      "targetSchema": {
+        "rel": "self"
+      }
+    },
+    {
+      "title": "Create a foo",
+      "href": "/fixtures/foos",
+      "method": "POST",
+      "schema": {
+        "type": "object",
+        "required": ["foo", "baz"],
+        "properties": {
+          "foo": "#/definitions/foo_prop",
+          "baz": "#/definitions/baz_prop",
+          "boo": {
+            "oneOf": [
+              {"$ref": "#/definitions/object_one"},
+              {"$ref": "#/definitions/object_two"}
+            ]
+          }
+        }
+      },
       "targetSchema": {
         "rel": "self"
       }

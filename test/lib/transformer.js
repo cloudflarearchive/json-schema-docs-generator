@@ -6,6 +6,7 @@ var Resolver = require('../../lib/resolver');
 var Transformer = require('../../lib/transformer');
 var schema1 = require('../fixtures/schema1.json');
 var schema2 = require('../fixtures/schema2.json');
+var ObjectDefinition = require('../../lib/object-definition');
 var _ = require('lodash');
 
 /** @name describe @function */
@@ -27,53 +28,6 @@ describe('Schema Transformer', function() {
 
   beforeEach(function() {
     this.transformer = new Transformer(this.schemas);
-  });
-
-  describe('#buildHref', function() {
-    it('should replace references with placeholders', function() {
-      expect(this.transformer.buildHref(this.schema1.links[1].href, this.schema1)).to.equal('/fixtures/foos/:identifier');
-    });
-
-    it('should replace references with example data', function() {
-      expect(this.transformer.buildHref(this.schema1.links[1].href, this.schema1, true)).to.equal('/fixtures/foos/123');
-    });
-
-    it('should throw an error if it cannot resolve a reference', function() {
-      expect(_.bind(function() {
-        this.transformer.buildHref('/foo/bar/{#/not/a/place}', this.schema1)
-      }, this)).to.throw(Error);
-    });
-  });
-
-  describe('#generateExample', function() {
-    beforeEach(function() {
-      this.example = this.transformer.generateExample(this.schema1.links[0].schema, this.schema1);
-    });
-
-    it('should return an object', function() {
-      expect(this.example).to.be.an('object');
-    });
-
-    it('should fill attribute definitions with example values', function() {
-      expect(this.example).to.have.property('foo').that.equals('bar');
-    });
-
-    it('should build an example for the whole object', function() {
-      this.example = this.transformer.generateExample(this.schema1, this.schema1);
-      expect(this.example).to.be.an('object');
-      expect(this.example).to.have.keys(['id', 'foo', 'baz', 'boo', 'composite', 'nested_object']);
-      expect(this.example.id).to.equal(123);
-      expect(this.example.foo).to.equal('bar');
-      expect(this.example.baz).to.equal('boo');
-      expect(this.example.boo).to.eql({
-        attribute_one: 'One'
-      });
-      expect(this.example.composite).to.eql({
-        attribute_one: 'One',
-        attribute_two: 'Two'
-      });
-      expect(this.example.nested_object).to.not.be.empty;
-    });
   });
 
   describe('#transformLinks', function() {
@@ -103,6 +57,78 @@ describe('Schema Transformer', function() {
       expect(this.link).to.have.property('response').that.is.a('string');
     });
 
-    it('should have input parameters');
+    it('should have input parameters', function() {
+      expect(this.link).to.have.property('parameters').that.is.an('object');
+      expect(this.link).to.have.property('parameters').that.is.an.instanceOf(ObjectDefinition);
+    });
+  });
+
+  describe('#buildHref', function() {
+    it('should replace references with placeholders', function() {
+      expect(this.transformer.buildHref(this.schema1.links[1].href, this.schema1)).to.equal('/fixtures/foos/:identifier');
+    });
+
+    it('should replace references with example data', function() {
+      expect(this.transformer.buildHref(this.schema1.links[1].href, this.schema1, true)).to.equal('/fixtures/foos/123');
+    });
+
+    it('should throw an error if it cannot resolve a reference', function() {
+      expect(_.bind(function() {
+        this.transformer.buildHref('/foo/bar/{#/not/a/place}', this.schema1)
+      }, this)).to.throw(Error);
+    });
+  });
+
+  describe('#buildCurl', function() {
+    it('should return a string', function() {
+      expect(this.transformer.buildCurl(this.schema1.links[1], this.schema1)).to.be.a('string');
+    });
+
+    it('should have a curl in it', function() {
+      expect(this.transformer.buildCurl(this.schema1.links[1], this.schema1)).to.contain('curl');
+    });
+  });
+
+  describe('#formatData', function() {
+    it('should return a string', function() {
+      expect(this.transformer.formatData(123), 'number').to.be.a('string');
+      expect(this.transformer.formatData('abc'), 'string').to.be.a('string');
+      expect(this.transformer.formatData({
+        a: 1,
+        b: [0,2]
+      }), 'object').to.be.a('string');
+      expect(this.transformer.formatData([1,2,3,4]), 'array').to.be.a('string');
+      expect(this.transformer.formatData(false), 'boolean').to.be.a('string');
+    });
+  });
+
+  describe('#generateExample', function() {
+    beforeEach(function() {
+      this.example = this.transformer.generateExample(this.schema1.links[0].schema, this.schema1);
+    });
+
+    it('should return an object', function() {
+      expect(this.example).to.be.an('object');
+    });
+
+    it('should fill attribute definitions with example values', function() {
+      expect(this.example).to.have.property('foo').that.equals('bar');
+    });
+
+    it('should build an example for the whole object', function() {
+      this.example = this.transformer.generateExample(this.schema1, this.schema1);
+      expect(this.example).to.be.an('object');
+      expect(this.example.id).to.equal(123);
+      expect(this.example.foo).to.equal('bar');
+      expect(this.example.baz).to.equal('boo');
+      expect(this.example.boo).to.eql({
+        attribute_one: 'One'
+      });
+      expect(this.example.composite).to.eql({
+        attribute_one: 'One',
+        attribute_two: 'Two'
+      });
+      expect(this.example.nested_object).to.not.be.empty;
+    });
   });
 });
