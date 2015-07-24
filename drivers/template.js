@@ -53,7 +53,8 @@ TemplateDriver.prototype._retrieve = function(files) {
  * some templates override others. The assumption here is that
  * deeper-nested templates will prevail.
  *
- * @param {Object} files - Resolved files, keyed by filename
+ * @param {Object} files - Resolved files, keyed by filepath
+ * @return {Object} - templates contents, keyed by filename
  * @private
  */
 TemplateDriver.prototype._transform = function(templates) {
