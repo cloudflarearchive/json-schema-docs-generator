@@ -63,6 +63,16 @@ describe('Object Definition', function() {
   });
 
   describe('#build', function() {
+    beforeEach(function() {
+      this.allOfSchema = {
+        id: '/someid',
+        allOf: [
+          this.schema1.definitions.object_one,
+          this.schema1.definitions.object_two
+        ]
+      };
+    });
+
     it('should provide access to the original object', function() {
       expect(this.definition).to.have.property('_original').that.equals(this.schema1);
     });
@@ -85,14 +95,14 @@ describe('Object Definition', function() {
     });
 
     it('should merge allOf references together', function() {
-      var schema  = {
-        allOf: [
-          this.schema1.definitions.object_one,
-          this.schema1.definitions.object_two
-        ]
-      };
-      var result = this.definition.build(schema);
+      var result = this.definition.build(this.allOfSchema);
       expect(result).to.have.property('allProps').that.has.keys(['attribute_one', 'attribute_two']);
+    });
+
+    it('should not overwrite the _original property when merging allOf references', function() {
+      var result = this.definition.build(this.allOfSchema);
+      expect(result).to.have.property('_original').that.equals(this.allOfSchema);
+      expect(result._original).to.have.property('id').that.equals('/someid');
     });
 
     it('should build an array of definition objects for oneOf references', function() {

@@ -130,5 +130,31 @@ describe('Schema Transformer', function() {
       });
       expect(this.example.nested_object).to.not.be.empty;
     });
+
+    it('should handle rel=self references', function() {
+      var data = this.transformer.generateExample(this.schema1.links[0].targetSchema, this.schema1);
+      expect(data).to.be.an('object');
+      expect(data).to.deep.equal({
+        id: 123,
+        foo: 'bar',
+        baz: 'boo',
+        array_prop: ['bar'],
+        boo: {
+          attribute_one: 'One'
+        },
+        nested_object: {
+          baz: 'boo',
+          foo: 'bar'
+        },
+        composite: {
+          attribute_one: 'One',
+          attribute_two: 'Two'
+        },
+        option: {
+          attribute_two: 'Two'
+        },
+        plus_one: 'bar'
+      });
+    });
   });
 });
