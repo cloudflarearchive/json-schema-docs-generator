@@ -14,7 +14,7 @@
     "handlebars": "^2.0.0-alpha.4",
     "lodash": "^3.9.3",
     "minimist": "~0.2.0",
-    "mkdir-p": "0.0.6"
+    "mkdirp-then": "^1.1.0"
   },
   "homepage": "https://github.com/cloudflare/json-schema-docs-generator",
   "keywords": [
