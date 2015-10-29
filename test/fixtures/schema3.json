@@ -1,0 +1,11 @@
+{
+  "id": "/do/not/include",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "properties":{
+    "test": {
+      "type": "string",
+      "example": "foobs"
+    }
+  }
+}
