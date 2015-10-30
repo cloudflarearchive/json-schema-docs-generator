@@ -8,12 +8,12 @@
   },
   "dependencies": {
     "bluebird": "^2.0.2",
-    "colors": "~0.6.2",
+    "colors": "^1.1.2",
     "deep-get-set": "^0.1.1",
     "glob": "^5.0.12",
     "handlebars": "^2.0.0-alpha.4",
     "lodash": "^3.9.3",
-    "minimist": "~0.2.0",
+    "minimist": "^1.2.0",
     "mkdirp-then": "^1.1.0"
   },
   "homepage": "https://github.com/cloudflare/json-schema-docs-generator",
