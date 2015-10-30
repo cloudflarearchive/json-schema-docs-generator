@@ -35,7 +35,8 @@
     "sinon-chai": "^2.8.0"
   },
   "scripts": {
-    "test": "./node_modules/mocha/bin/mocha \"test/**/*.js\"",
-    "coverage": "./node_modules/istanbul/lib/cli.js cover ./node_modules/mocha/bin/_mocha -- --ui bdd -R spec -t 5000"
+    "test": "mocha \"test/**/*.js\"",
+    "dev": "npm run test -- --watch",
+    "coverage": "istanbul cover _mocha -- \"test/**/*.js\" --ui bdd -R spec -t 5000"
   }
 }
