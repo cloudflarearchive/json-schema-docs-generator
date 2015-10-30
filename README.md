@@ -2,6 +2,12 @@ JSON Schema HTML Documentation Generator
 =========================================
 A flexible solution for auto-generating HTML API documentation from JSON-schemas that take advantage of the v4 Hyper-Schema definition. To use this package, you must have at least one valid JSON-schema file, preferably one that implements the `links` definition of the Hyper-Schema spec.
 
+[![Travis build status](http://img.shields.io/travis/cloudflare/json-schema-docs-generator.svg?style=flat)](https://travis-ci.org/cloudflare/json-schema-docs-generator)
+[![Code Climate](https://codeclimate.com/github/cloudflare/json-schema-docs-generator/badges/gpa.svg)](https://codeclimate.com/github/cloudflare/json-schema-docs-generator)
+[![Test Coverage](https://codeclimate.com/github/cloudflare/json-schema-docs-generator/badges/coverage.svg)](https://codeclimate.com/github/cloudflare/json-schema-docs-generator.)
+[![Dependency Status](https://david-dm.org/cloudflare/json-schema-docs-generator.svg)](https://david-dm.org/cloudflare/json-schema-docs-generator)
+[![devDependency Status](https://david-dm.org/cloudflare/json-schema-docs-generator/dev-status.svg)](https://david-dm.org/cloudflare/json-schema-docs-generator#info=devDependencies)
+
 ## What this package provides ##
 Four main components are provided that can be combined to generate documented. Each of the components can be configued with a `debugLevel` of 0-4. The higher the debug level, the more verbose the output. This can help with debugging, specifically with resolving schemas.
 
