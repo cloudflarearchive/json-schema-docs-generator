@@ -3,9 +3,6 @@
   "description": "Auto-generate HTML documentation from JSON Schemas",
   "version": "1.0.1",
   "author": "Tony Stuck <tony@cloudflare.com>",
-  "bin": {
-    "docs": "./bin/generate.js"
-  },
   "dependencies": {
     "bluebird": "^3.0.2",
     "colors": "^1.1.2",
