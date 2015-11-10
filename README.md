@@ -17,7 +17,7 @@ The provided template driver uses Handlebars to retrieve, compile, and register 
 The class implements a single method, `fetch`, as its interface. `fetch` is expected to return a `Promise` that will resolve with an object of compiled templates, keyed by file name. The included driver takes an array of file paths (or globs) of template files to retreieve and compile in its constructor.
 
 ###### Usage: Template Driver
-```
+```javascript
 var TemplateDriver = require('json-schema-docs-generator').TemplateDriver;
 var driver = new TemplateDriver(['source/templates/*.handlebars'], {
  debugLevel: 1
@@ -32,7 +32,7 @@ A schema driver takes an array of file paths (or globs) of JSON schema files. It
 The heavy lifting is almost exclusively done by the `Parser` and `Resolver` classes, defined in `lib/{parser,resolver}.js`.
 
 ###### Usage: Schema Driver
-```
+```javascript
 var SchemaDriver = require('json-schema-docs-generator').SchemaDriver;
 var driver = new SchemaDriver(['schemas/**/*.json'], undefined, {
  debugLevel: 1
@@ -46,7 +46,7 @@ A Composer's job is to take templates and schemas, and produce HTML documentatio
 
 The current implementation requirement for the provided Composer class is that the result from the TemplateDriver has a template with the name of `base`. See `Composer.prototype.composePage` for more the implementation details. Ideally a better solution could be found here. The base template will receive a data object with a `page`, containing the object defined by your page configuration. It will also contain `navigation`, which contains a reference to the `currentPage` object, as well as all other page objects under `pages`. The template payload will look something like this:
 
-```
+```javascript
 templatesObjectResolvedFromDriver.base({
   page: {
     file: 'index.html',
@@ -67,7 +67,7 @@ templatesObjectResolvedFromDriver.base({
 You can build multiple pages by configuring page objects to group schemas together. Page objects can have any attributes you'd like for your templates. The only thing the Composer will help you do is swap out schema references for the fully resolved/transformed schemas. The composer will look for an array of schema IDs at the top level, or within each object of a `sections` array, for grouping one or more schemas that are related.
 
 ###### Usage: Composer
-```
+```javascript
 var Composer = require('json-schema-docs-generator').Composer;
 var composer = new Composer(schemaDriver, templateDriver, {
   destination: 'htdocs',
@@ -96,7 +96,7 @@ Other important transformations that happen are:
 ##### Object Definitions
 Each schema object transformed will have an `objectDefinition` attribute, which as the following structure:
 
-```
+```javascript
 {
   allProps: {},
   requiredProps: {},
@@ -112,7 +112,7 @@ If a schema utilizes `oneOf` or `anyOf` definitions, the sub-objects will be sto
 ##### Links
 Links are augmented with the following properties:
 
-```
+```javascript
 {
   htmlID: string,
   uri: string,
@@ -135,7 +135,7 @@ Instead, the core components provided will hopefully be enough to extend, overri
 
 Below is the minimal setup:
 
-```
+```javascript
 var schemaDriver = new Docs.SchemaDriver(['schemas/**/*.json']);
 var templateDriver = new Docs.TemplateDriver(['source/templates/**/*.handlebars']);
 var composer = new Docs.Composer(schemaDriver, templateDriver, {
