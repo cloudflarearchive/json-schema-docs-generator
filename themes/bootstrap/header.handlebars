@@ -12,7 +12,7 @@
 	<nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 		<div class="container">
 			<div class="navbar-header">
-				<a class="navbar-brand" href="/">{{company}} API Documentation</a>
+				<a class="navbar-brand" href="/">{{page.title}}</a>
 			</div>
 
 			<div class="collapse navbar-collapse">
@@ -20,8 +20,8 @@
 					<li class="dropdown">
 						<a href="#" data-toggle="dropdown" class="dropdown-toggle">Sections <span class="caret"></span></a>
 						<ul class="dropdown-menu" role="menu">
-							{{#each sections}}
-							<li><a href="#{{id}}">{{title}}</a></li>
+							{{#each page.sections}}
+							<li><a href="#{{htmlID}}">{{title}}</a></li>
 							{{/each}}
 						</ul>
 					</li>

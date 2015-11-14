@@ -1,0 +1,74 @@
+{{> header}}
+<div class="container">
+	<header class="row">
+		<hgroup class="col-lg-12">
+			<div class="page-header">
+				<h1>{{page.title}}</h1>
+			</div>
+		</hgroup>
+	</header>
+
+	<div class="row">
+		<div class="col-lg-3">
+			{{> sidebar}}
+		</div>
+
+		<div class="col-lg-9">
+			{{#each page.sections}}
+			<article id="{{id}}" class="row">
+				<header class="col-lg-12">
+					<h2>{{title}}</h2>
+					{{#if description}}
+					<p class="lead">{{description}}</p>
+					{{/if}}
+				</header>
+
+				{{#each schemas}}
+				<section id="{{htmlID}}" class="col-lg-12">
+					{{#each links}}
+						{{> endpoint}}
+					{{/each}}
+
+					{{!-- object definition area --}}
+					<section id="{{htmlID}}-properties">
+						<div class="panel panel-default">
+						{{#if objectDefinition.objects}}
+							<header class="panel-heading">
+								<h3 class="panel-title">{{title}}: variations</h3>
+							</header>
+							{{#each objectDefinition.objects}}
+							<div class="definition-row">
+								{{#if title}}
+								<div class="panel-body">
+									<h4>{{title}}</h4>
+								</div>
+								{{/if}}
+								{{#if example}}
+								<div class="panel-body">
+									<h5>Example response</h5>
+								</div>
+								<pre class="language-javascript">{{example}}</pre>
+								{{/if}}
+								{{#with allProps}}
+									{{> object-definition}}
+								{{/with}}
+							</div>
+							{{/each}}
+						{{else}}
+							<div class="panel-heading">
+								<h3 class="panel-title">Example object</h3>
+							</div>
+							{{#with objectDefinition.allProps}}
+								{{> object-definition}}
+							{{/with}}
+						{{/if}}
+						</div>
+					</section>
+				</section>
+				{{/each}}
+			</article>
+			{{/each}}
+		</div>
+	</div>
+</div>
+{{> footer}}

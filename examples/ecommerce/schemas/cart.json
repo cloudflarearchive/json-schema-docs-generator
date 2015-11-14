@@ -37,7 +37,7 @@
             "rel": "self",
             "href": "/cart/{#/definitions/identifier}",
             "method": "POST",
-            "authentication_needed": "yes",
+            "authentication_needed": true,
             "required": ["product", "quantity"],
             "schema": {
                 "type": "object",
@@ -58,7 +58,7 @@
             "rel": "instances",
             "href": "/cart",
             "method": "GET",
-            "authentication_needed": "yes",
+            "authentication_needed": true,
             "targetSchema": {
                 "type": "array",
                 "items": {"rel": "self"}
@@ -79,7 +79,7 @@
             "rel": "self",
             "href": "/cart/{#/definitions/identifier}",
             "method": "PUT",
-            "authentication_needed": "yes",
+            "authentication_needed": true,
             "required": ["quantity"],
             "schema": {
                 "type": "object",

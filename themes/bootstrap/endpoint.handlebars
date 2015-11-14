@@ -5,17 +5,18 @@
 	</header>
 	<div class="navbar navbar-default navbar-static-top"><span class="navbar-text">{{method}} {{uri}}</span></div>
 
-	{{#if parameters.required}}
-	<h4 class="panel-body"><em>Required</em> parameters</h4>
-	{{#with parameters.required}}
-		{{> endpoint-parameters}}
-	{{/with}}
+	{{#if parameters.requiredProps}}
+		<h4 class="panel-body"><em>Required</em> parameters</h4>
+		{{#with parameters.requiredProps}}
+			{{> endpoint-parameters}}
+		{{/with}}
 	{{/if}}
-	{{#if parameters.optional}}
-	<h4 class="panel-body"><em>Optional</em> parameters</h4>
-	{{#with parameters.optional}}
-		{{> endpoint-parameters}}
-	{{/with}}
+
+	{{#if parameters.optionalProps}}
+		<h4 class="panel-body"><em>Optional</em> parameters</h4>
+		{{#with parameters.optionalProps}}
+			{{> endpoint-parameters}}
+		{{/with}}
 	{{/if}}
 
 	<h5 class="panel-body">cURL <sup>example</sup></h5>

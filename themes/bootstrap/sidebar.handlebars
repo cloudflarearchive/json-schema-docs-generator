@@ -1,17 +1,20 @@
 <h3>Sections</h3>
 <nav>
-	{{#each sections}}
+	{{#each navigation.currentPage.sections}}
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="panel-title"><a href="#{{id}}">{{title}}</a></h4>
+			<h4 class="panel-title"><a href="#{{htmlID}}">{{title}}</a></h4>
 		</div>
+		{{#each schemas}}
 		<div class="panel-body api-nav">
+			<h5>{{title}}</h5>
 			<ul class="nav nav-pills nav-stacked">
-				{{#each endpoints}}
-				<li><a href="#{{id}}">{{title}}</a></li>
+				{{#each links}}
+				<li><a href="#{{htmlID}}">{{title}}</a></li>
 				{{/each}}
 			</ul>
 		</div>
+		{{/each}}
 	</div>
 	{{/each}}
 </nav>

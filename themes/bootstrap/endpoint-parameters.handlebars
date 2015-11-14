@@ -1,18 +1,50 @@
-<table class="table table-striped">
-	<thead>
-		<tr>
-			<th>Name <small>/type</small></th>
-			<th>Description</th>
-			<th>Example</th>
-		</tr>
-	</thead>
-	<tbody>
-	{{#each this}}
-		<tr>
-			<td><strong>{{name}}</strong><br /><small><em>{{type}}</em></small></td>
-			<td>{{description}}</td>
-			<td class="example-code"><small><code>{{example}}</code></small></td>
-		</tr>
-	{{/each}}
-	</tbody>
-</table>
+<div class="overflow-scroll parameter-table">
+	<table class="table table-striped input-parameters">
+		<thead>
+			<tr>
+				<th>Name <small>/type</small></th>
+				<th>Description <small>/example</small></th>
+				<th>Example</th>
+			</tr>
+		</thead>
+		<tbody>
+		{{#each this}}
+			<tr>
+				<td class="param-name">
+					<strong>{{@key}}</strong><br />
+					<small><em>{{type}}</em></small>
+				</td>
+				<td class="param-description object-definition-table">
+					{{#if description}}{{description}}{{/if}}
+					<div>
+						{{#if oneOf}}<br />One of the following:{{/if}}
+						{{#if anyOf}}<br />Any of the following:{{/if}}
+					</div>
+
+					{{#with allProps}}
+						<a href="#" class="sub-object-definition-toggle"><span class="verb">Show</span> definition &raquo;</a>
+						{{> object-definition}}
+					{{/with}}
+
+					{{#each oneOf}}
+						<h6>{{description}}</h6>
+						<a href="#" class="sub-object-definition-toggle"><span class="verb">Show</span> definition &raquo;</a>
+						{{#with allProps}}
+							{{> object-definition}}
+						{{/with}}
+					{{/each}}
+
+					{{#each anyOf}}
+						<h6>{{description}}</h6>
+						<a href="#" class="sub-object-definition-toggle"><span class="verb">Show</span> definition &raquo;</a>
+						{{#with allProps}}
+							{{> object-definition}}
+						{{/with}}
+					{{/each}}
+				</td>
+				<td class="example-code"><small><code>{{example}}</code></small></td>
+			</tr>
+		{{/each}}
+		</tbody>
+	</table>
+</div>
