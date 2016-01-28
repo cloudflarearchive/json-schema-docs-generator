@@ -66,8 +66,8 @@
         "price": {"$ref": "#/definitions/price"},
         "currency": {"$ref": "#/definitions/currency"},
         "in_stock": {"$ref": "#/definitions/in_stock"},
-        "available_qty": {"$ref": "#/definitions/avaiable_qty"},
-        "image": {"$ref": "#/definitions/image"},
+        "available_qty": {"$ref": "#/definitions/available_qty"},
+        "image": {"$ref": "#/definitions/image"}
     },
 
     "additionalProperties": {
