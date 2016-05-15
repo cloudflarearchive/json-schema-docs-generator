@@ -15,7 +15,7 @@ var fixturesDir = process.cwd() + '/test/fixtures';
 
 describe('Template Driver', function() {
   beforeEach(function() {
-    this.driver = new TemplateDriver([fixturesDir + '/*.handlebars']);
+    this.driver = new TemplateDriver([fixturesDir + '/nested/*.handlebars', fixturesDir + '/*.handlebars']);
   });
 
   it('should return an object', function() {
@@ -33,6 +33,13 @@ describe('Template Driver', function() {
   it('should key templates by filename', function() {
     return this.driver.fetch().then(function(result) {
       expect(result).to.have.keys(['template1', 'template2', 'template3']);
+    });
+  });
+
+  it('should content of template(s) be overrided', function() {
+    return this.driver.fetch().then(function(result) {
+      var template3 = result['template3']();
+      expect(template3).to.match(/override[\w\s]+3rd/);
     });
   });
 

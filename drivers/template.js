@@ -65,7 +65,7 @@ TemplateDriver.prototype._transform = function(templates) {
       contents: contents
     };
   // Sort by file path length
-  }).sortBy(templates, function(config) {
+  }).sortBy(function(config) {
     return config.path.length;
   // Transform back to an object keyed by file name
   }).transform(function (obj, config) {
