@@ -86,7 +86,7 @@ TemplateDriver.prototype._transform = function(templates) {
  */
 TemplateDriver.prototype._compile = function(templates) {
   templates = _.mapValues(templates, function(str) {
-    return Handlebars.compile(str);
+    return Handlebars.compile(str, {preventIndent: true});
   });
   // Register each template as a partial, so they can be included in each other
   _.each(templates, function(source, name) {
