@@ -49,15 +49,19 @@ describe('cURL Helper', function() {
 
   describe('#buildFlag', function() {
     it('should allow wrapping the value in nothing', function() {
-      expect(curl.buildFlag('X', 'GET', '')).to.equal('-X GET');
+      expect(curl.buildFlag('X', 'GET', 0, '')).to.equal('-X GET');
     });
 
     it('should wrap the value in double quotes by default', function() {
-      expect(curl.buildFlag('H', 'value')).to.equal('-H "value"');
+      expect(curl.buildFlag('H', 'value', 0)).to.equal('-H "value"');
     });
 
     it('should wrap the value in the specified type', function() {
-      expect(curl.buildFlag('H', 'value', '\'')).to.equal('-H \'value\'');
+      expect(curl.buildFlag('H', 'value', 0, '\'')).to.equal('-H \'value\'');
+    });
+
+    it('should prepend extra 5 spaces', function() {
+      expect(curl.buildFlag('H', 'value', 5)).to.equal('     -H "value"');
     });
   });
 
