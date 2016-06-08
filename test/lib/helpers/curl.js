@@ -23,7 +23,11 @@ describe('cURL Helper', function() {
 
     it('should add headers', function() {
       var str = curl.generate('https://api.example.com/url', 'POST', {
-        'My-Header': 'some value'
+        properties: {
+          'My-Header': {
+            example: 'some value'
+          }
+        }
       });
       expect(str).to.contain('My-Header: some value');
     });
@@ -43,7 +47,7 @@ describe('cURL Helper', function() {
         key2: 'value2'
       });
 
-      expect(str).to.contain('?key1=value1&key2=value2');
+      expect(str).to.contain('"https://api.example.com/url?key1=value1&key2=value2"');
     });
   });
 
