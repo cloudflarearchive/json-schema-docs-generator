@@ -1,7 +1,7 @@
 {
   "name": "json-schema-docs-generator",
   "description": "Auto-generate HTML documentation from JSON Schemas",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": "Tony Stuck <tony@cloudflare.com>",
   "dependencies": {
     "bluebird": "^3.0.2",
