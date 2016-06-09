@@ -23,11 +23,7 @@ describe('cURL Helper', function() {
 
     it('should add headers', function() {
       var str = curl.generate('https://api.example.com/url', 'POST', {
-        properties: {
-          'My-Header': {
-            example: 'some value'
-          }
-        }
+        'My-Header': 'some value'
       });
       expect(str).to.contain('My-Header: some value');
     });
