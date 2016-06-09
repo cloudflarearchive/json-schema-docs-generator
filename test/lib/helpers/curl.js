@@ -43,7 +43,7 @@ describe('cURL Helper', function() {
         key2: 'value2'
       });
 
-      expect(str).to.contain('?key1=value1&key2=value2');
+      expect(str).to.contain('"https://api.example.com/url?key1=value1&key2=value2"');
     });
   });
 
