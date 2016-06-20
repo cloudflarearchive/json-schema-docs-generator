@@ -1,0 +1,13 @@
+{
+  "id": "/recursive/two",
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "definitions": {
+    "filter": {
+      "$ref": "#/definitions/something"
+    },
+    "something": {
+      "$ref": "/recursive/one#/definitions/condition"
+    }
+  }
+}

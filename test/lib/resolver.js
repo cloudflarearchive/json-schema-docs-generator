@@ -3,9 +3,13 @@
 
 var _ = require('lodash');
 var expect = require('chai').expect;
-var Resolver = require('../../lib/resolver');
+var resolver = require('../../lib/resolver2');
 var schema1 = require('../fixtures/schema1.json');
 var schema2 = require('../fixtures/schema2.json');
+var schemaPageRules = require('../fixtures/schema-pagerules.json');
+var schemaRec1 = require('../fixtures/schema-recursion1.json');
+var schemaRec2 = require('../fixtures/schema-recursion2.json');
+
 
 /** @name describe @function */
 /** @name it @function */
@@ -18,116 +22,125 @@ describe('Resolver', function() {
   beforeEach(function() {
     this.schema1 = _.cloneDeep(schema1);
     this.schema2 = _.cloneDeep(schema2);
-    this.schemas = [this.schema1, this.schema2];
-    this.resolver = new Resolver(this.schemas);
+    this.schemaRec1 = _.cloneDeep(schemaRec1);
+    this.schemaRec2 = _.cloneDeep(schemaRec2);
+    this.schemaPageRules = _.cloneDeep(schemaPageRules);
+    this.schemas = {};
+    this.schemas[this.schema1.id] = this.schema1;
+    this.schemas[this.schema2.id] = this.schema2;
+    this.schemas[this.schemaRec1.id] = this.schemaRec1;
+    this.schemas[this.schemaRec2.id] = this.schemaRec2;
+    this.schemas[this.schemaPageRules.id] = this.schemaPageRules;
+    this.resolver = resolver;
   });
 
-  describe('#_normalizeReference', function() {
-    it('should prepend the context if the reference is relative', function() {
-      var ref = '#/definitions/foo_prop';
-      var context = '/fixtures/foo';
+  describe('#normalizeReference', function() {
+    it('should prepend the schemaId if the reference is internal', function() {
+      var schemaId = '/fixtures/foo';
+      var path = '#/definitions/foo_prop';
 
-      expect(this.resolver._normalizeReference(ref, context)).to.equal('/fixtures/foo#/definitions/foo_prop');
+      expect(this.resolver.normalizeReference(schemaId, path, this.schemas))
+        .to.deep.equal({schemaId: '/fixtures/foo', path: '/definitions/foo_prop'});
     });
 
-    it('should resolve the same fully qualified reference if the reference is already referring to the context', function() {
-      var ref = '/fixtures/foo#/definitions/foo_prop';
-      var context = '/fixtures/foo';
+    it('should switch to a schemaId definied in the reference', function() {
+      var schemaId = '/fixtures/foo';
+      var path = '/fixtures/baz';
 
-      expect(this.resolver._normalizeReference(ref, context)).to.equal(ref);
+      expect(this.resolver.normalizeReference(schemaId, path, this.schemas))
+        .to.deep.equal({schemaId: '/fixtures/baz', path: '#'});
     });
 
-    it('should ignore the context if the reference is fully qualified to a different context', function() {
-      var ref = '/fixtures/baz#/definitions/baz_prop';
-      var context = '/fixtures/foo';
+    it('should use schemaId and path definied in the reference', function() {
+      var schemaId = '/fixtures/foo';
+      var path = '/fixtures/baz#/definitions/identifier';
 
-      expect(this.resolver._normalizeReference(ref, context)).to.equal(ref);
+      expect(this.resolver.normalizeReference(schemaId, path, this.schemas))
+        .to.deep.equal({schemaId: '/fixtures/baz', path: '/definitions/identifier'});
     });
+
+    it('should use schemaId and path definied in the reference', function() {
+      var schemaId = '/fixtures/foo';
+      var path = '/fixtures/baz#/definitions/identifier';
+
+      expect(this.resolver.normalizeReference(schemaId, path, this.schemas))
+        .to.deep.equal({schemaId: '/fixtures/baz', path: '/definitions/identifier'});
+    });
+
+    it('should throw an error if schemaId does not exist', function() {
+      var schemaId = '/fixtures/not/existing';
+      expect(_.bindKey(this.resolver, 'normalizeReference', schemaId, '#', this.schemas), 'wrong schemaId')
+        .to.throw(ReferenceError);
+    });
+
+    it('should throw an error if the reference does not resolve into a valid schema path', function() {
+      var schemaId = '/fixtures/foo';
+      var path = '#/definitions/not/existing';
+
+      expect(_.bindKey(this.resolver, 'normalizeReference', schemaId, path, this.schemas), 'wrong path')
+        .to.throw(ReferenceError);
+    });
+
   });
 
-  describe('#_resolvePointer', function() {
-    it('should resolve the reference for a relative URI with proper context', function() {
-      expect(this.resolver._resolvePointer('#/definitions/foo_prop', '/fixtures/foo'))
+  describe('#resolveReference', function() {
+    it('should resolve the reference for a relative URI with proper schemaId', function() {
+      expect(this.resolver.resolveReference('/fixtures/foo', '#/definitions/foo_prop', this.schemas))
         .to.be.an('object')
         .that.has.keys(['type', 'description', 'example']);
     });
 
-    it('should resolve a fully qualified internal reference without context', function() {
-      expect(this.resolver._resolvePointer('/fixtures/foo#/definitions/foo_prop'))
-        .to.be.an('object')
-        .that.has.keys(['type', 'description', 'example']);
-    });
-
-    it('should resolve a fully qualified reference without context', function() {
-      expect(this.resolver._resolvePointer('/fixtures/foo'))
-        .to.be.an('object')
-        .that.contains.keys(['id', 'definitions', 'properties']);
-    });
-
-    it('should resolve a fully qualified reference regardless of context', function() {
-      expect(this.resolver._resolvePointer('/fixtures/foo', '/fixtures/baz').id).to.equal('/fixtures/foo');
-    });
-
-    it('should throw an error if the schema cannot be found', function() {
-      expect(_.bindKey(this.resolver, '_resolvePointer', '/not/a/reference'), 'no context').to.throw(ReferenceError);
-      expect(_.bindKey(this.resolver, '_resolvePointer', '/not/a/reference', '/fixtures/foo'), 'with valid context').to.throw(ReferenceError);
-      expect(_.bindKey(this.resolver, '_resolvePointer', '/not/a/reference', '/fake/foo'), 'with invalid context').to.throw(ReferenceError);
-      expect(_.bindKey(this.resolver, '_resolvePointer', '#/not/a/place', '/fixtures/foo'), 'with invalid relative internal reference').to.throw(ReferenceError);
-      expect(_.bindKey(this.resolver, '_resolvePointer', '/fixtures/foo#/not/a/place', '/fixtures/foo'), 'with invalid fully qualified internal reference').to.throw(ReferenceError);
-    });
-  });
-
-  describe('#get', function() {
     it('should resolve a fully qualified reference', function() {
-      expect(this.resolver.get('/fixtures/foo'))
-        .to.be.an('object')
-        .that.contains.keys(['id', 'definitions', 'properties']);
-    });
-
-    it('should resolve a fully qualified internal reference', function() {
-      expect(this.resolver.get('/fixtures/foo#/definitions/foo_prop'))
+      expect(this.resolver.resolveReference('/fixtures/baz', '/fixtures/foo#/definitions/foo_prop', this.schemas))
         .to.be.an('object')
         .that.has.keys(['type', 'description', 'example']);
     });
-  });
 
-  describe('#addSchema', function() {
-    it('should add the schema to the store', function() {
-      this.resolver.addSchema({
-        id: '/my/schema',
-        type: 'object'
-      });
-
-      expect(this.resolver.schemas).to.contain.key('/my/schema');
+    it('should resolve a fully qualified reference without path', function() {
+      expect(this.resolver.resolveReference('/fixtures/baz', '/fixtures/foo', this.schemas))
+        .to.be.an('object')
+        .that.contains.keys(['id', 'definitions', 'properties', 'generator']);
     });
   });
 
-  describe('#removeSchema', function() {
-    it('should remove the schema by ID from the store', function() {
-      this.resolver.removeSchema('/fixtures/foo');
-      expect(this.resolver.schemas).to.not.contain.key('/fixtures/foo');
+  describe('#initCounters', function() {
+    it('should add counter to all object nodes', function() {
+      this.resolver.initCounters(this.schema1);
+      expect(this.schema1).that.contains.keys(['__COUNTER', 'definitions']);
+      expect(this.schema1.definitions).that.contains.keys(['__COUNTER']);
     });
 
-    it('should remove the schema by reference from the store', function() {
-      this.resolver.removeSchema(this.resolver.schemas['/fixtures/foo']);
-      expect(this.resolver.schemas).to.not.contain.key('/fixtures/foo');
+    it('should set counters to 0', function() {
+      this.resolver.initCounters(this.schema1);
+      expect(this.schema1.__COUNTER).equals(0);
+      expect(this.schema1.definitions.__COUNTER).equals(0);
+    });
+  });
+
+  describe('#resolve', function() {
+    it('should return newly build schemas', function() {
+      expect(this.resolver.resolve(this.schemas))
+        .that.contains.keys(['/fixtures/baz', '/fixtures/foo']);
     });
   });
 
   describe('#dereferenceSchema', function() {
     it('should replace $ref references with the resolved schema', function() {
-      expect(this.schema1.properties.foo, 'properties, definition reference').to.have.key('$ref');
-      expect(this.schema1.properties.baz, 'properties, definition reference (external ref)').to.have.key('$ref');
-      expect(this.schema1.definitions.baz_prop, 'definitions, external reference').to.have.key('$ref');
-      expect(this.schema1.links[0].schema.properties.foo, 'deep object in array').to.have.key('$ref');
-      expect(this.schema1.properties.boo.oneOf[0], '$ref object in array').to.have.key('$ref');
+      expect(this.schema1.properties.foo.$ref, 'properties, definition reference').to.be.a('string');
+      expect(this.schema1.properties.baz.$ref, 'properties, definition reference (external ref)').to.be.a('string');
+      expect(this.schema1.definitions.baz_prop.$ref, 'definitions, external reference').to.be.a('string');
+      expect(this.schema1.links[0].schema.properties.foo.$ref, 'deep object in array').to.be.a('string');
+      expect(this.schema1.properties.boo.oneOf[0].$ref, '$ref object in array').to.be.a('string');
 
-      var schema = this.resolver.dereferenceSchema(this.schema1, this.schema1.id);
-      expect(schema.properties.foo, 'properties, definition reference').to.not.have.key('$ref');
-      expect(schema.properties.baz, 'properties, definition reference (external ref)').to.not.have.key('$ref');
-      expect(schema.definitions.baz_prop, 'definitions, external reference').to.not.have.key('$ref');
-      expect(schema.links[0].schema.properties.foo, 'deep object in array').to.not.have.key('$ref');
-      expect(schema.properties.boo.oneOf[0], '$ref object in array').to.not.have.key('$ref');
+      _.forEach(this.schemas, this.resolver.initCounters);
+      var schema = this.resolver.dereferenceSchema('/fixtures/foo', '#', this.schemas);
+
+      expect(schema.properties.foo.$ref, 'properties, definition reference').to.be.a('object');
+      expect(schema.properties.baz.$ref, 'properties, definition reference (external ref)').to.be.a('object');
+      expect(schema.definitions.baz_prop.$ref, 'definitions, external reference').to.be.a('object');
+      expect(schema.links[0].schema.properties.foo.$ref, 'deep object in array').to.be.a('object');
+      expect(schema.properties.boo.oneOf[0].$ref, '$ref object in array').to.be.a('object');
     });
   });
+
 });
