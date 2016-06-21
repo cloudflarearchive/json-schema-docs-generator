@@ -103,20 +103,6 @@ describe('Resolver', function() {
     });
   });
 
-  describe('#initCounters', function() {
-    it('should add counter to all object nodes', function() {
-      this.resolver.initCounters(this.schema1);
-      expect(this.schema1).that.contains.keys(['__COUNTER', 'definitions']);
-      expect(this.schema1.definitions).that.contains.keys(['__COUNTER']);
-    });
-
-    it('should set counters to 0', function() {
-      this.resolver.initCounters(this.schema1);
-      expect(this.schema1.__COUNTER).equals(0);
-      expect(this.schema1.definitions.__COUNTER).equals(0);
-    });
-  });
-
   describe('#resolve', function() {
     it('should return newly build schemas and resolve $ref', function() {
       expect(this.schema1.properties.foo, 'properties, definition reference').to.have.key('$ref');
