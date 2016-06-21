@@ -31,6 +31,8 @@ describe('Schema Driver', function() {
         '/fixtures/baz',
         '/do/not/include',
         '/recursive/pagerules',
+        '/recursive/one',
+        '/recursive/two'
         ]);
     });
   });

@@ -29,7 +29,9 @@ describe('Schema Parser', function() {
         '/fixtures/foo',
         '/fixtures/baz',
         '/do/not/include',
-        '/recursive/pagerules'
+        '/recursive/pagerules',
+        '/recursive/one',
+        '/recursive/two'
       ]);
     });
   });

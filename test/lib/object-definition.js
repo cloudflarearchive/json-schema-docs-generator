@@ -4,7 +4,7 @@
 var sinon = require('sinon');
 var chai = require('chai');
 var expect = chai.expect;
-var Resolver = require('../../lib/resolver');
+var resolver = require('../../lib/resolver');
 var ObjectDefinition = require('../../lib/object-definition');
 var schema1 = require('../fixtures/schema1.json');
 var schema2 = require('../fixtures/schema2.json');
@@ -22,11 +22,9 @@ chai.use(require('sinon-chai'));
 describe('Object Definition', function() {
   // @TODO Figure out a better way isolate these tests
   before(function() {
-    this.schema1 = _.cloneDeep(schema1);
-    this.schema2 = _.cloneDeep(schema2);
-    this.schemas = [this.schema1, this.schema2];
-    this.resolver = new Resolver(this.schemas);
-    this.resolver.resolve();
+    this.schemas = resolver.resolve([schema1, schema2]);
+    this.schema1 = this.schemas['/fixtures/foo'];
+    this.schema2 = this.schemas['/fixtures/baz'];
   });
 
   beforeEach(function() {
