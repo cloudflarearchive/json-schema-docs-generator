@@ -3,7 +3,7 @@
 
 var _ = require('lodash');
 var expect = require('chai').expect;
-var resolver = require('../../lib/resolver2');
+var resolver = require('../../lib/resolver');
 var schema1 = require('../fixtures/schema1.json');
 var schema2 = require('../fixtures/schema2.json');
 var schemaPageRules = require('../fixtures/schema-pagerules.json');
@@ -118,28 +118,21 @@ describe('Resolver', function() {
   });
 
   describe('#resolve', function() {
-    it('should return newly build schemas', function() {
-      expect(this.resolver.resolve(this.schemas))
-        .that.contains.keys(['/fixtures/baz', '/fixtures/foo']);
-    });
-  });
+    it('should return newly build schemas and resolve $ref', function() {
+      expect(this.schema1.properties.foo, 'properties, definition reference').to.have.key('$ref');
+      expect(this.schema1.properties.baz, 'properties, definition reference (external ref)').to.have.key('$ref');
+      expect(this.schema1.definitions.baz_prop, 'definitions, external reference').to.have.key('$ref');
+      expect(this.schema1.links[0].schema.properties.foo, 'deep object in array').to.have.key('$ref');
+      expect(this.schema1.properties.boo.oneOf[0], '$ref object in array').to.have.key('$ref');
 
-  describe('#dereferenceSchema', function() {
-    it('should replace $ref references with the resolved schema', function() {
-      expect(this.schema1.properties.foo.$ref, 'properties, definition reference').to.be.a('string');
-      expect(this.schema1.properties.baz.$ref, 'properties, definition reference (external ref)').to.be.a('string');
-      expect(this.schema1.definitions.baz_prop.$ref, 'definitions, external reference').to.be.a('string');
-      expect(this.schema1.links[0].schema.properties.foo.$ref, 'deep object in array').to.be.a('string');
-      expect(this.schema1.properties.boo.oneOf[0].$ref, '$ref object in array').to.be.a('string');
+      var result = this.resolver.resolve(this.schemas);
+      expect(result).that.contains.keys(['/fixtures/baz', '/fixtures/foo']);
 
-      _.forEach(this.schemas, this.resolver.initCounters);
-      var schema = this.resolver.dereferenceSchema('/fixtures/foo', '#', this.schemas);
-
-      expect(schema.properties.foo.$ref, 'properties, definition reference').to.be.a('object');
-      expect(schema.properties.baz.$ref, 'properties, definition reference (external ref)').to.be.a('object');
-      expect(schema.definitions.baz_prop.$ref, 'definitions, external reference').to.be.a('object');
-      expect(schema.links[0].schema.properties.foo.$ref, 'deep object in array').to.be.a('object');
-      expect(schema.properties.boo.oneOf[0].$ref, '$ref object in array').to.be.a('object');
+      expect(result['/fixtures/foo'].properties.foo, 'properties, definition reference').to.not.have.key('$ref');
+      expect(result['/fixtures/foo'].properties.baz, 'properties, definition reference (external ref)').to.not.have.key('$ref');
+      expect(result['/fixtures/foo'].definitions.baz_prop, 'definitions, external reference').to.not.have.key('$ref');
+      expect(result['/fixtures/foo'].links[0].schema.properties.foo, 'deep object in array').to.not.have.key('$ref');
+      expect(result['/fixtures/foo'].properties.boo.oneOf[0], '$ref object in array').to.not.have.key('$ref');
     });
   });
 
