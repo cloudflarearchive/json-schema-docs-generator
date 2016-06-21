@@ -5,6 +5,31 @@
   "definitions": {
     "condition": {
       "$ref": "/recursive/two#/definitions/filter"
+    },
+    "rocket_loader": {
+      "title": "Rocket Loader",
+      "description": "Rocket Loader is a general-purpose thing",
+      "properties": {
+        "foo": {
+          "enum": [
+            true,
+            false,
+            {
+              "$ref": "#/definitions/rocket_loader/description"
+            }
+          ],
+          "default": true,
+          "description": "ID of the zone setting"
+        }
+      }
+    }
+  },
+  "properties": {
+    "test": {
+      "$ref": "#/definitions/rocket_loader/description"
+    },
+    "test2": {
+      "$ref": "#/definitions/rocket_loader/properties/foo/enum"
     }
   }
 }
