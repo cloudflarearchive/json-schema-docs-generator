@@ -17,7 +17,7 @@ Build the [ecommerce example](https://github.com/cloudflare/json-schema-docs-gen
 
 ```
 git clone git@github.com:cloudflare/json-schema-docs-generator.git
-cd examples/ecommerce
+cd json-schema-docs-generator/examples/ecommerce
 npm install
 node bin.js
 open dist/index.html
