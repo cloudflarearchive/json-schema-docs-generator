@@ -8,7 +8,7 @@ var Docs = require('json-schema-docs-generator');
 var schemaDriver = new Docs.SchemaDriver(['schemas/**/*.json'], undefined, {
   debugLevel: debug
 });
-var templateDriver = new Docs.TemplateDriver(['../../themes/bootstrap/*.handlebars'], {
+var templateDriver = new Docs.TemplateDriver(['templates/*.handlebars'], {
   debugLevel: debug
 });
 var composer = new Docs.Composer(schemaDriver, templateDriver, {
@@ -43,4 +43,5 @@ composer.build()
   })
   .catch(function(err) {
     global.console.log(err.message);
+    global.console.log(err.stack);
   });

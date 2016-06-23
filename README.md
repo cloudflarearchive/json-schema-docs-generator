@@ -11,6 +11,18 @@ A flexible solution for auto-generating HTML API documentation from JSON-schemas
 ## What this package provides ##
 Four main components are provided that can be combined to generate documented. Each of the components can be configued with a `debugLevel` of 0-4. The higher the debug level, the more verbose the output. This can help with debugging, specifically with resolving schemas.
 
+### Build example
+
+Build the [ecommerce example](https://github.com/cloudflare/json-schema-docs-generator/tree/master/examples/ecommerce) to see how [schemas](https://github.com/cloudflare/json-schema-docs-generator/tree/master/examples/ecommerce/schemas) and [templates](https://github.com/cloudflare/json-schema-docs-generator/tree/master/examples/ecommerce/templates) are combined together:
+
+```
+git clone git@github.com:cloudflare/json-schema-docs-generator.git
+cd json-schema-docs-generator/examples/ecommerce
+npm install
+node bin.js
+open dist/index.html
+```
+
 ### Template Driver
 The provided template driver uses Handlebars to retrieve, compile, and register partial templates for the generating of documentation. To use your own template engine, simply adhere to the following interface:
 
@@ -136,6 +148,7 @@ Instead, the core components provided will hopefully be enough to extend, overri
 Below is the minimal setup:
 
 ```javascript
+var Docs = require('json-schema-docs-generator');
 var schemaDriver = new Docs.SchemaDriver(['schemas/**/*.json']);
 var templateDriver = new Docs.TemplateDriver(['source/templates/**/*.handlebars']);
 var composer = new Docs.Composer(schemaDriver, templateDriver, {
