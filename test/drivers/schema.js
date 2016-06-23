@@ -26,7 +26,14 @@ describe('Schema Driver', function() {
 
   it('should key schemas by ID', function() {
     return this.driver.fetch().then(function(result) {
-      expect(result).to.have.keys(['/fixtures/foo', '/fixtures/baz', '/do/not/include']);
+      expect(result).to.have.keys([
+        '/fixtures/foo',
+        '/fixtures/baz',
+        '/do/not/include',
+        '/recursive/pagerules',
+        '/recursive/one',
+        '/recursive/two'
+        ]);
     });
   });
 });
