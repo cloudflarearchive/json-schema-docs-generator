@@ -5,9 +5,8 @@ var resolveGlobs = require('../lib/helpers/resolve-globs');
 var Handlebars = require('handlebars');
 var path = require('path');
 var _ = require('lodash');
+var chalk = require('chalk');
 var DEBUG_PREFIX = 'TEMPLATE DRIVER: ';
-// For colored console output
-require('colors');
 
 /**
  *
@@ -31,10 +30,7 @@ TemplateDriver.prototype.fetch = function() {
     .bind(this)
     .then(this._retrieve)
     .then(this._transform)
-    .then(this._compile)
-    /*.catch(function(err) {
-      throw new Error(DEBUG_PREFIX + ' Error: '.red + err.message);
-    })*/;
+    .then(this._compile);
 };
 
 /**
@@ -71,7 +67,7 @@ TemplateDriver.prototype._transform = function(templates) {
   }).transform(function (obj, config) {
     var base = path.basename(config.path, path.extname(config.path));
     if (obj[base]) {
-      this._debug(1, 'Overwriting %s with %s', base.yellow, config.path.grey);
+      this._debug(1, 'Overwriting %s with %s', chalk.yellow(base), chalk.grey(config.path));
     }
     obj[base] = config.contents;
   }, {}, this);
