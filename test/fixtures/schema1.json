@@ -110,6 +110,7 @@
         }
       },
       "targetSchema": {
+        "type": "object",
         "rel": "self"
       }
     },
@@ -141,6 +142,26 @@
       },
       "targetSchema": {
         "rel": "self"
+      }
+    },
+    {
+      "title": "Get all foos -- array",
+      "href": "/fixtures/foos",
+      "method": "GET",
+      "schema": {
+        "type": "object",
+        "description": "Queriable properties",
+        "properties": {
+          "foo": {
+            "$ref": "#/definitions/foo_prop"
+          }
+        }
+      },
+      "targetSchema": {
+        "type": "array",
+        "items": {
+          "rel": "self"
+        }
       }
     }
   ]
