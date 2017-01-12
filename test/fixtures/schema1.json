@@ -142,6 +142,28 @@
       "targetSchema": {
         "rel": "self"
       }
+    },
+    {
+      "title": "Get many foos",
+      "href": "/fixtures/foos",
+      "method": "GET",
+      "schema": {
+        "type": "object",
+        "description": "Queriable properties",
+        "properties": {
+          "foo": {
+            "$ref": "#/definitions/foo_prop"
+          }
+        }
+      },
+      "targetSchema": {
+        "type": "array",
+        "minItems": 2,
+        "maxItems": 5,
+        "items": {
+          "rel": "self"
+        }
+      }
     }
   ]
 }
