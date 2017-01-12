@@ -156,5 +156,33 @@ describe('Schema Transformer', function() {
         plus_one: 'bar'
       });
     });
+
+    it('should handle rel=self references as an array', function() {
+      var data = this.transformer.generateExample(this.schema1.links[3].targetSchema, this.schema1);
+      expect(data).to.be.an('array');
+      expect(data.length).to.be.gte(2);
+      expect(data.length).to.be.lte(5);
+      expect(data[0]).to.deep.equal({
+        id: 123,
+        foo: 'bar',
+        baz: 'boo',
+        array_prop: ['bar'],
+        boo: {
+          attribute_one: 'One'
+        },
+        nested_object: {
+          baz: 'boo',
+          foo: 'bar'
+        },
+        composite: {
+          attribute_one: 'One',
+          attribute_two: 'Two'
+        },
+        option: {
+          attribute_two: 'Two'
+        },
+        plus_one: 'bar'
+      });
+    });
   });
 });
